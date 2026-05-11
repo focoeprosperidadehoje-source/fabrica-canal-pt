@@ -9,7 +9,7 @@ from google.oauth2.service_account import Credentials
 import gspread
 
 CHAVE_API = os.environ.get("GEMINI_API_KEY")
-GOOGLE_JSON = os.environ.get("GOOGLE_CREDENTIALS")
+GOOGLE_JSON = os.environ.get("GOOGLE_CREDENTIALS_PT")
 
 print("🔐 Autenticando no Google Sheets via Service Account...")
 credenciais_dict = json.loads(GOOGLE_JSON)
@@ -28,27 +28,54 @@ def obter_cascata_de_modelos():
         
         melhor_flash = sorted(flash_models, reverse=True)[0] if flash_models else 'gemini-2.5-flash'
         melhor_pro = sorted(pro_models, reverse=True)[0] if pro_models else 'gemini-2.5-pro'
-        print(f"   ✅ Modelos atualizados: {melhor_flash} e {melhor_pro}")
         return[melhor_flash, melhor_flash, melhor_flash, melhor_pro, melhor_pro]
     except:
         return['gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-pro']
 
 modelos_cascata = obter_cascata_de_modelos()
 
+def calcular_contexto_sazonal(data_alvo):
+    ano = data_alvo.year
+    # Algoritmo de Computus para a Páscoa (Matemática exata, sem alucinação da IA)
+    a = ano % 19; b = ano // 100; c = ano % 100; d = b // 4; e = b % 4; f = (b + 8) // 25; g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30; i = c // 4; k = c % 4; l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451; mes = (h + l - 7 * m + 114) // 31; dia = ((h + l - 7 * m + 114) % 31) + 1
+    pascoa = datetime.date(ano, mes, dia)
+    
+    cinzas = pascoa - datetime.timedelta(days=46)
+    sexta_santa = pascoa - datetime.timedelta(days=2)
+    corpus_christi = pascoa + datetime.timedelta(days=60)
+    pentecostes = pascoa + datetime.timedelta(days=49)
+    
+    maio_1 = datetime.date(ano, 5, 1)
+    dia_das_maes = maio_1 + datetime.timedelta(days=(6 - maio_1.weekday() + 7) % 7 + 7)
+    
+    if data_alvo == pascoa: return "HOJE É DOMINGO DE PÁSCOA. Foco na ressurreição e vitória sobre a morte."
+    if data_alvo == cinzas: return "HOJE É QUARTA-FEIRA DE CINZAS. Foco em arrependimento e conversão."
+    if data_alvo == sexta_santa: return "HOJE É SEXTA-FEIRA SANTA. Foco no sacrifício na cruz."
+    if data_alvo == corpus_christi: return "HOJE É CORPUS CHRISTI. Foco na eucaristia e corpo de Cristo."
+    if data_alvo == pentecostes: return "HOJE É PENTECOSTES. Foco no derramamento do Espírito Santo."
+    if data_alvo == dia_das_maes: return "HOJE É DIA DAS MÃES. Foco em abençoar as mães e a maternidade."
+    if data_alvo.month == 10 and data_alvo.day == 12: return "HOJE É DIA DE NOSSA SENHORA APARECIDA. Celebração máxima da padroeira do Brasil."
+    if data_alvo.month == 12 and data_alvo.day == 25: return "HOJE É NATAL. Foco no nascimento do menino Jesus."
+    if data_alvo.month == 12 and data_alvo.day == 31: return "HOJE É VÉSPERA DE ANO NOVO. Foco em gratidão e proteção para o próximo ano."
+    if data_alvo.month == 1 and data_alvo.day == 1: return "HOJE É ANO NOVO. Foco em entregar o novo ano nas mãos de Deus."
+    return ""
+
 ID_PLANILHA = "1KgIjWrLUVlllhlZB1R9fkHGxxZlLsax1aOVGZrYwgnU"
 PILARES = {
-    0: "Guerra Espiritual y Protección (Lunes)", 1: "Liberación de Vicios y Ataduras (Martes)",
-    2: "Restauración Familiar y Matrimonial (Miércoles)", 3: "Providencia y Puertas Abiertas (Jueves)",
-    4: "Misericordia y Sanación Física (Viernes)", 5: "El Manto de Guadalupe (Sábado)", 6: "Milagros y Gratitud (Domingo)"
+    0: "Guerra Espiritual e Proteção (Segunda)", 1: "Libertação de Vícios e Amarras (Terça)",
+    2: "Restauração Familiar e Matrimonial (Quarta)", 3: "Providência e Portas Abertas (Quinta)",
+    4: "Misericórdia e Cura Física (Sexta)", 5: "O Manto de Maria (Sábado)", 6: "Milagres e Gratidão (Domingo)"
 }
 GRADE_DIARIA =[
-    {"horario": "06:00", "personagem": "Jesus", "idioma": "ES", "foco": "Mañana: Consagración, fuerza y protección para el día que nace."},
-    {"horario": "12:00", "personagem": "Maria", "idioma": "ES", "foco": "Mediodía: Intercesión por la familia, salud y las aflicciones de la jornada."},
-    {"horario": "18:00", "personagem": "Maria", "idioma": "ES", "foco": "Atardecer: Acogimiento maternal, consuelo y gratitud por el día."},
-    {"horario": "21:00", "personagem": "Jesus", "idioma": "ES", "foco": "Noche: Entrega del sueño, perdón y descanso profundo en Dios."}
+    {"horario": "06:00", "personagem": "Jesus", "idioma": "PT", "foco": "Manhã: Consagração, sabedoria divina e direção para o dia."},
+    {"horario": "12:00", "personagem": "Maria", "idioma": "PT", "foco": "Meio-dia: Intercessão por causas impossíveis e milagres urgentes."},
+    {"horario": "18:00", "personagem": "Maria", "idioma": "PT", "foco": "Entardecer: Paz no lar, escudo espiritual e alívio da ansiedade."},
+    {"horario": "21:00", "personagem": "Jesus", "idioma": "PT", "foco": "Noite: O segredo para dormir tranquilamente, proteção noturna (Salmo 91)."}
 ]
 
-aba = gc.open_by_key(ID_PLANILHA).get_worksheet(0)
+aba = gc.open_by_key(ID_PLANILHA).worksheet("PT")
 
 todas_linhas = aba.get_all_values()
 if len(todas_linhas) > 500:
@@ -58,7 +85,7 @@ if len(todas_linhas) > 500:
 
 proxima_linha_vazia = len(todas_linhas) + 1
 
-valores_coluna_a = [linha[0].strip() for linha in todas_linhas[1:] if len(linha) > 0]
+valores_coluna_a =[linha[0].strip() for linha in todas_linhas[1:] if len(linha) > 0]
 valores_coluna_b = [linha[1].strip() for linha in todas_linhas[1:] if len(linha) > 1]
 
 dias_existentes = {}
@@ -83,7 +110,7 @@ while data_check <= meta_estoque:
     horarios_presentes = dias_existentes.get(data_check,[])
     if len(horarios_presentes) < 4:
         data_alvo = data_check
-        grade_para_processar =[v for v in GRADE_DIARIA if v["horario"] not in horarios_presentes]
+        grade_para_processar = [v for v in GRADE_DIARIA if v["horario"] not in horarios_presentes]
         break
     data_check += datetime.timedelta(days=1)
 
@@ -92,29 +119,19 @@ if not data_alvo:
     sys.exit(0)
 
 pilar_do_dia = PILARES[data_alvo.weekday()]
-print(f"\n📅 DATA ALVO: {data_alvo} | Pilar: {pilar_do_dia}")
+contexto_sazonal = calcular_contexto_sazonal(data_alvo)
+print(f"\n📅 DATA ALVO: {data_alvo} | Pilar: {pilar_do_dia} | Sazonal: {contexto_sazonal}")
 
 esperas_exponenciais =[10, 20, 40, 80, 120]
 
 for video in grade_para_processar:
     horario, persona, idioma, foco_teologico = video["horario"], video["personagem"].upper(), video["idioma"], video["foco"]
-    if data_alvo.weekday() == 4:
-        foco_teologico += " ENFOQUE: Misericordia y Perdón." if horario in["06:00", "12:00"] else " ENFOQUE: La Pasión de Cristo y el Sacrificio."
-
+    
     print(f"🎬 PRODUZINDO: {horario} | {persona}")
     
-    instrucao_abertura = ""
-    if "Guerra" in pilar_do_dia: instrucao_abertura = "Comienza reconociendo una amenaza o envidia invisible, y luego invoca protección."
-    elif "Vicios" in pilar_do_dia: instrucao_abertura = "Comienza con el dolor de ver a un ser querido en ataduras, pidiendo liberación."
-    elif "Familiar" in pilar_do_dia: instrucao_abertura = "Comienza evocando las fricciones y el deseo de paz en el hogar."
-    elif "Providencia" in pilar_do_dia: instrucao_abertura = "Comienza reconociendo el esfuerzo, las deudas o la necesidad de puertas abiertas."
-    elif "Misericordia" in pilar_do_dia: instrucao_abertura = "Comienza pidiendo sanación para el cuerpo enfermo y perdón para el alma."
-    elif "Manto" in pilar_do_dia: instrucao_abertura = "Comienza pidiendo ser escondido bajo el manto sagrado contra los peligros."
-    elif "Milagros" in pilar_do_dia: instrucao_abertura = "Comienza con un fuerte agradecimiento por los milagros y la vida."
+    persona_prompt = "Jesus Cristo" if persona == 'JESUS' else "Nossa Senhora (Maria)"
 
-    persona_prompt = "Jesucristo" if persona == 'JESUS' else "la Virgen de Guadalupe (cariñosamente llamada La Morenita)"
-
-    prompt_tema = f"Actúa como Teólogo. Crea un tema corto (máx 8 palabras) para una oración. Pilar: '{pilar_do_dia}', dirigida a '{persona_prompt}', momento: '{foco_teologico}'. SOLO el tema, sin comillas ni asteriscos."
+    prompt_tema = f"Atue como Teólogo. Crie um tema curto (máx 8 palavras) para uma oração. Pilar: '{pilar_do_dia}', dirigida a '{persona_prompt}', momento: '{foco_teologico}'. Sazonalidade: '{contexto_sazonal}'. APENAS o tema, sem aspas ou asteriscos."
     tema_gerado = None
     for i in range(5):
         try:
@@ -125,32 +142,36 @@ for video in grade_para_processar:
     if not tema_gerado: continue 
     time.sleep(5)
 
-    regra_meditacao = "OBLIGATORIO: En la descripción (DESC), añade un aviso destacado diciendo que al final del video hay 5 minutos de música celestial para dormir/meditar." if horario in["18:00", "21:00"] else ""
-    cta_comentarios = "Pide al oyente que escriba un motivo de gratitud en los comentarios." if horario in["18:00", "21:00"] else "Pide al oyente que escriba su intención o petición para el día en los comentarios."
-    regra_persona = "OBLIGATORIO: Como te diriges a Jesucristo, ESTÁ ESTRICTAMENTE PROHIBIDO mencionar a María, la Virgen o Guadalupe." if persona == 'JESUS' else "OBLIGATORIO: Como te diriges a María, DEBES usar las invocaciones 'Virgen de Guadalupe', 'Madre de Guadalupe' y referirte a ella cariñosamente como 'La Morenita'."
-    titulo_sufixo = "Oración de la Mañana" if horario == "06:00" else "Oración del Mediodía" if horario == "12:00" else "Oración Mariana" if horario == "18:00" else "Oración de la Noche"
+    regra_meditacao = "OBRIGATÓRIO: Na descrição (DESC), adicione um aviso destacado dizendo que ao final do vídeo há 5 minutos de música celestial para dormir/meditar." if horario in ["18:00", "21:00"] else ""
+    regra_persona = "OBRIGATÓRIO: Como você se dirige a Jesus, É PROIBIDO mencionar Maria ou Nossa Senhora." if persona == 'JESUS' else "OBRIGATÓRIO: Como você se dirige a Maria, DEVE usar as invocações 'Nossa Senhora', 'Mãe' ou 'Virgem Maria'."
+    titulo_sufixo = "Oração da Manhã" if horario == "06:00" else "Oração do Meio-Dia" if horario == "12:00" else "Oração da Tarde" if horario == "18:00" else "Oração da Noite"
 
     prompt_principal = f"""
-    Actúa como un guía espiritual y hermano en la fe. Escribe una oración extensa de 1500 a 1800 palabras sobre "{tema_gerado}" dirigida a {persona_prompt}. 
-    CONTEXTO: Publicada a las {horario}. Enfoque: "{foco_teologico}". 
-    REGLAS:
-    1. AUDIENCIA GLOBAL: Español Latino neutro. PROHIBIDO mencionar países.
-    2. GANCHO INICIAL (0-60s): NO te presentes. Empieza tocando el dolor/esperanza del fiel. Luego conecta con: {instrucao_abertura}
-    3. PROFUNDIDAD: UN SOLO TEMA central. Párrafos elaborados.
-    4. ARCO: Vulnerabilidad -> Súplica -> Entrega/Gratitud. Incluye bloque pidiendo por la salud de los enfermos.
-    5. PAUSAS: OBLIGATORIO usar abundantes puntos suspensivos (...) para forzar pausas en la voz.
-    6. CENSURA: PROHIBIDO descripciones de violencia física.
-    7. CERO INTERJECCIONES: PROHIBIDO usar "¡Ay!", "¡Oh!".
-    8. CIERRE: {cta_comentarios} Hazlo sonar como misión de fe, NUNCA pidiendo likes.
-    9. ANTI-JSON: Escribe en TEXTO PLANO. PROHIBIDO JSON, llaves {{ }} o asteriscos (*).
+    Atue como um guia espiritual empático e acolhedor. Escreva uma oração extensa de 1500 a 1800 palavras sobre "{tema_gerado}" dirigida a {persona_prompt}. 
+    CONTEXTO: Publicada às {horario}. Enfoque: "{foco_teologico}". Sazonalidade: "{contexto_sazonal}".
+    
+    REGRAS DE RETENÇÃO (MUITO IMPORTANTE):
+    1. ESTRATÉGIA CENOURA/CHOCOLATE: O Título e a Thumb devem focar no "Chocolate" (o desejo/alívio imediato: dormir bem, afastar inimigo, paz no lar, milagre urgente). O roteiro entrega a oração profunda (Cenoura).
+    2. REGRA DOS 15 SEGUNDOS (HOOK 3A): O início do roteiro DEVE ter 3 blocos rápidos:
+       - Atenção (0-5s): Uma pergunta provocativa focada na dor do fiel.
+       - Autoridade (5-10s): Diga que {persona_prompt} deixou um ensinamento/proteção para isso.
+       - Agenda (10-15s): Prometa o alívio se ele ficar até o final da oração.
+    3. CTA IMEDIATO: Peça naturalmente no início: "Se você crê, digite 'Amém, eu recebo' nos comentários agora mesmo".
+    
+    REGRAS GERAIS:
+    4. ARCO: Vulnerabilidade -> Súplica -> Entrega/Gratidão. Inclua um bloco pedindo pela saúde dos enfermos.
+    5. PAUSAS: OBRIGATÓRIO usar abundantes pontos suspensivos (...) para forçar pausas na voz da IA.
+    6. CENSURA: PROIBIDO descrições de violência física. PROIBIDO usar "Ah!", "Oh!".
+    7. ANTI-JSON: Escreva em TEXTO PLANO. PROIBIDO JSON, chaves {{ }} ou asteriscos (*).
     {regra_persona}
     {regra_meditacao}
-    FORMATO EXACTO:
-    TITULO:[Título magnético. FORMATO: "[Promesa Urgente] - {titulo_sufixo}". SIN FECHA. SIN ASTERISCOS NI CORCHETES]
-    THUMB:[Frase de impacto de MÁXIMO 4 PALABRAS. Promesa urgente. SIN ASTERISCOS NI CORCHETES]
-    GUION:[Oración completa de 1500 a 1800 palabras]
-    DESC:[Descripción de 3 párrafos con fuerte SEO]
-    TAGS:[Etiquetas separadas por comas]
+    
+    FORMATO EXATO:
+    TITULO: [Título magnético focado no benefício. FORMATO: "[O Segredo / Urgente / Descubra] - {titulo_sufixo}". SEM DATA. SEM ASTERISCOS]
+    THUMB:[Frase de impacto de MÁXIMO 4 PALABRAS. Foco na dor/alívio. SEM ASTERISCOS]
+    GUION:[Oração completa de 1500 a 1800 palavras]
+    DESC:[Descrição de 3 parágrafos com forte SEO]
+    TAGS:[Tags separadas por vírgulas]
     """
     
     texto_ia = None
@@ -163,18 +184,18 @@ for video in grade_para_processar:
     if not texto_ia: continue
 
     try:
-        # CORREÇÃO: Regex agora aceita TÍTULO e GUIÓN com acentos
+        # BLINDAGEM REGEX ABSOLUTA
         t_match = re.search(r'T[IÍ]TULO:\s*(.*?)(?=THUMB:|GUI[OÓ]N:|DESC:|TAGS:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         th_match = re.search(r'THUMB:\s*(.*?)(?=GUI[OÓ]N:|DESC:|TAGS:|T[IÍ]TULO:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         g_match = re.search(r'GUI[OÓ]N:\s*(.*?)(?=DESC:|TAGS:|T[IÍ]TULO:|THUMB:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         d_match = re.search(r'DESC:\s*(.*?)(?=TAGS:|T[IÍ]TULO:|THUMB:|GUI[OÓ]N:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         tg_match = re.search(r'TAGS:\s*(.*?)(?=T[IÍ]TULO:|THUMB:|GUI[OÓ]N:|DESC:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         
-        titulo_final = t_match.group(1).replace('*', '').replace('"', '').replace('[', '').replace(']', '').strip() if t_match else "Título Padrão"
-        thumb_final = th_match.group(1).replace('*', '').replace('"', '').replace('[', '').replace(']', '').strip() if th_match else "ORACIÓN PODEROSA"
+        titulo_final = re.sub(r'[*"\[\]]', '', t_match.group(1)).strip() if t_match else "Oração Poderosa de Proteção"
+        thumb_final = re.sub(r'[*"\[\]]', '', th_match.group(1)).strip() if th_match else "RECEBA O MILAGRE"
         roteiro_final = g_match.group(1).strip() if g_match else texto_ia 
-        desc_final = d_match.group(1).strip() if d_match else "Descripción Padrão"
-        tags_final = tg_match.group(1).replace('*', '').replace('[', '').replace(']', '').strip() if tg_match else "Tags"
+        desc_final = d_match.group(1).strip() if d_match else "Oração diária."
+        tags_final = re.sub(r'[*\[\]]', '', tg_match.group(1)).strip() if tg_match else "oração, fé, proteção"
         
         nova_linha =[str(data_alvo), horario, "Pronto p/ Áudio", persona, idioma, tema_gerado, titulo_final, roteiro_final, tags_final, desc_final, "Pendente", thumb_final]
         aba.update(values=[nova_linha], range_name=f"A{proxima_linha_vazia}:L{proxima_linha_vazia}")
