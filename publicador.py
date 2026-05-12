@@ -249,14 +249,13 @@ for index, linha in enumerate(dados, start=2):
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
         
-        # TRAVA DE VIAGEM NO TEMPO (Evita erro 400 do YouTube)
         try: 
             agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
             data_hora_alvo = pytz.timezone('America/Sao_Paulo').localize(datetime.datetime.strptime(f"{data_str} {horario_str}", "%Y-%m-%d %H:%M"))
             if data_hora_alvo > agora_br:
                 publish_at = data_hora_alvo.isoformat()
             else:
-                publish_at = None # Já passou, posta como privado sem agendar
+                publish_at = None 
         except: publish_at = None
         
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False}}
@@ -264,16 +263,29 @@ for index, linha in enumerate(dados, start=2):
         
         for tentativa in range(3):
             try:
+                # 1. Sobe o Vídeo
                 video_id = youtube.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(video_final, chunksize=-1, resumable=True, mimetype="video/mp4")).execute().get("id")
-                if os.path.exists(thumb_path): youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(thumb_path)).execute()
-                if os.path.exists(caminho_vtt): youtube.captions().insert(part="snippet", body={"snippet": {"videoId": video_id, "language": "pt-BR", "name": "Português", "isDraft": False}}, media_body=MediaFileUpload(caminho_vtt)).execute()
+                print(f"   🎉 SUCESSO! Vídeo {video_id} publicado.")
                 
-                pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9" if persona == 'JESUS' and "21:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
-                if pid: youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
+                # 2. Sobe a Capa (Se falhar, avisa mas não trava)
+                try:
+                    if os.path.exists(thumb_path): youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(thumb_path)).execute()
+                except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a capa: {e}")
+                
+                # 3. Sobe a Legenda (Se falhar, avisa mas não trava)
+                try:
+                    if os.path.exists(caminho_vtt): youtube.captions().insert(part="snippet", body={"snippet": {"videoId": video_id, "language": "pt-BR", "name": "Português", "isDraft": False}}, media_body=MediaFileUpload(caminho_vtt)).execute()
+                except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
+                
+                # 4. Adiciona na Playlist
+                try:
+                    pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9" if persona == 'JESUS' and "21:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
+                    if pid: youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
+                except Exception as e: print(f"   ⚠️ Aviso: Não foi possível adicionar à playlist: {e}")
                 
                 aba_principal.update_cell(index, col_status, 'Publicado')
-                print(f"   🎉 SUCESSO! Vídeo {video_id} publicado.")
-                break
+                break # Sai do loop de tentativas pois o vídeo principal subiu
+                
             except Exception as e: 
                 print(f"   ❌ Erro no YouTube (Tentativa {tentativa+1}/3): {e}")
                 time.sleep(15)
