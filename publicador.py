@@ -33,7 +33,7 @@ drive_service = build_drive('drive', 'v3', credentials=creds_sheets)
 PASTA_TEMP = "/tmp/fabrica_dark"
 os.makedirs(PASTA_TEMP, exist_ok=True)
 
-# IDs DAS PASTAS
+# IDs DAS PASTAS (BRASIL)
 ID_PASTA_JESUS = "1kSl8xFW9_4Q_03XKq1c2dunovvlo3urH"
 ID_PASTA_MARIA_UNIVERSAL = "1IyWdkNqdKQn8kDX-EWSEjKqOLNPEg6jk"
 ID_PASTA_MARIA_APARECIDA = "1I_KLQUiPQrpFGQ2EibtlqtrvHJ0DK9LC"
@@ -74,7 +74,7 @@ def obter_duracao(arquivo):
 
 def filtro_broll(nome, horario):
     n = nome.lower()
-    if "06:00" in horario or "12:00" in horario: return any(x in n for x in ["dia", "velas"])
+    if "06:00" in horario or "12:00" in horario: return any(x in n for x in["dia", "velas"])
     elif "18:00" in horario: return any(x in n for x in["velas", "flores", "noite"])
     elif "21:00" in horario: return any(x in n for x in["noite", "cosmos", "velas"])
     return True
@@ -205,7 +205,7 @@ for index, linha in enumerate(dados, start=2):
         
         while tempo_acumulado < duracao_total:
             arquivo_ts = f"{PASTA_TEMP}/chunk_{contador_chunk}.ts"
-            duracao_padrao = random.randint(8, 12)
+            duracao_padrao = random.randint(8, 10) # AJUSTADO: Oscila apenas entre 8 e 10 segundos
             
             if tempo_acumulado >= duracao_audio:
                 if not baralho_brolls_uso: baralho_brolls_uso = brolls_locais.copy(); random.shuffle(baralho_brolls_uso)
@@ -224,7 +224,8 @@ for index, linha in enumerate(dados, start=2):
                     if not baralho_imgs_uso: baralho_imgs_uso = imgs_locais.copy(); random.shuffle(baralho_imgs_uso)
                     ativo = baralho_imgs_uso.pop()
                     efeito_zoom = random.choice(['in', 'out'])
-                    zoom_cmd = "zoompan=z='1.0+0.0004*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0004*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24"
+                    # AJUSTADO: Velocidade do zoom aumentada de 0.0004 para 0.0006
+                    zoom_cmd = "zoompan=z='1.0+0.0006*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0006*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24"
                     subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=3840:2160:force_original_aspect_ratio=increase,crop=3840:2160,{zoom_cmd}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
                     tempo_acumulado += duracao_padrao
             lista_ts.append(arquivo_ts)
