@@ -101,21 +101,20 @@ def criar_thumbnail(img_path, texto_curto, horario, persona, caminho_saida):
         nh = int(img.width / (1920/1080))
         off = (img.height - nh) / 2
         img = img.crop((0, off, img.width, img.height - off))
-    img = img.resize((1920, 1080)).convert("RGB") # IMAGEM 100% LIMPA (Sem névoa preta)
+    img = img.resize((1920, 1080)).convert("RGB") 
     
     draw = ImageDraw.Draw(img)
-    # NOVAS CORES DA BARRA
     cor_barra = "#FFD700" if "06:00" in horario else "#FF8C00" if "12:00" in horario else "#32CD32" if "18:00" in horario else "#00BFFF"
     draw.rectangle([(0, 0), (120, 1080)], fill=cor_barra)
     
     texto = texto_curto.upper()
-    font_size = 350 # Começa gigante
+    font_size = 350 
     while font_size > 50:
         try: font = ImageFont.truetype("Anton.ttf", font_size)
         except: break
         linhas = textwrap.wrap(texto, width=12, break_long_words=False)[:3]
         max_w = max([draw.textlength(l, font=font) for l in linhas] + [0])
-        if max_w <= 820: # Limite da metade direita da tela
+        if max_w <= 820: 
             break
         font_size -= 5 
         
@@ -124,7 +123,6 @@ def criar_thumbnail(img_path, texto_curto, horario, persona, caminho_saida):
     for i, linha in enumerate(linhas):
         w = draw.textlength(linha, font=font)
         x_text = 960 + ((960 - w) / 2)
-        # Contorno super grosso nativo
         draw.text((x_text, y_text), linha, font=font, fill=cores[i % len(cores)], stroke_width=15, stroke_fill="black")
         y_text += font_size * 1.1
     img.save(caminho_saida)
@@ -140,7 +138,6 @@ for index, linha in enumerate(dados, start=2):
         
         print(f"🎬 INICIANDO: Linha {index} - {persona} às {horario_str}")
         
-        # LÓGICA DE APARECIDA
         data_obj = datetime.datetime.strptime(data_str, '%Y-%m-%d').date()
         is_aparecida = ("18:00" in horario_str) and (1 <= data_obj.day <= 15) and (data_obj.month == 10)
         
@@ -205,7 +202,7 @@ for index, linha in enumerate(dados, start=2):
         
         while tempo_acumulado < duracao_total:
             arquivo_ts = f"{PASTA_TEMP}/chunk_{contador_chunk}.ts"
-            duracao_padrao = random.randint(8, 10) # AJUSTADO: Oscila apenas entre 8 e 10 segundos
+            duracao_padrao = random.randint(8, 10) 
             
             if tempo_acumulado >= duracao_audio:
                 if not baralho_brolls_uso: baralho_brolls_uso = brolls_locais.copy(); random.shuffle(baralho_brolls_uso)
@@ -224,7 +221,6 @@ for index, linha in enumerate(dados, start=2):
                     if not baralho_imgs_uso: baralho_imgs_uso = imgs_locais.copy(); random.shuffle(baralho_imgs_uso)
                     ativo = baralho_imgs_uso.pop()
                     efeito_zoom = random.choice(['in', 'out'])
-                    # AJUSTADO: Velocidade do zoom aumentada de 0.0004 para 0.0006
                     zoom_cmd = "zoompan=z='1.0+0.0006*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0006*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1920x1080:fps=24"
                     subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=3840:2160:force_original_aspect_ratio=increase,crop=3840:2160,{zoom_cmd}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
                     tempo_acumulado += duracao_padrao
@@ -253,26 +249,34 @@ for index, linha in enumerate(dados, start=2):
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
         
-        try: publish_at = pytz.timezone('America/Sao_Paulo').localize(datetime.datetime.strptime(f"{data_str} {horario_str}", "%Y-%m-%d %H:%M")).isoformat() 
+        # TRAVA DE VIAGEM NO TEMPO (Evita erro 400 do YouTube)
+        try: 
+            agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
+            data_hora_alvo = pytz.timezone('America/Sao_Paulo').localize(datetime.datetime.strptime(f"{data_str} {horario_str}", "%Y-%m-%d %H:%M"))
+            if data_hora_alvo > agora_br:
+                publish_at = data_hora_alvo.isoformat()
+            else:
+                publish_at = None # Já passou, posta como privado sem agendar
         except: publish_at = None
         
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False}}
         if publish_at: body["status"]["publishAt"] = publish_at
         
-        for _ in range(3):
+        for tentativa in range(3):
             try:
                 video_id = youtube.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(video_final, chunksize=-1, resumable=True, mimetype="video/mp4")).execute().get("id")
                 if os.path.exists(thumb_path): youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(thumb_path)).execute()
                 if os.path.exists(caminho_vtt): youtube.captions().insert(part="snippet", body={"snippet": {"videoId": video_id, "language": "pt-BR", "name": "Português", "isDraft": False}}, media_body=MediaFileUpload(caminho_vtt)).execute()
                 
-                # PLAYLISTS DO BRASIL
                 pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9" if persona == 'JESUS' and "21:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
                 if pid: youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
                 
                 aba_principal.update_cell(index, col_status, 'Publicado')
                 print(f"   🎉 SUCESSO! Vídeo {video_id} publicado.")
                 break
-            except Exception as e: time.sleep(15)
+            except Exception as e: 
+                print(f"   ❌ Erro no YouTube (Tentativa {tentativa+1}/3): {e}")
+                time.sleep(15)
         break 
 
 print("\n🚀 SERVIDOR MATRIX DESLIGANDO.")
