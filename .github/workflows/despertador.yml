@@ -2,9 +2,9 @@ name: Usina Automática Diária
 
 on:
   schedule:
-    - cron: '23 5 * * *'
-    - cron: '23 7 * * *'
-    - cron: '23 9 * * *'
+    - cron: '23 4 * * *'
+    - cron: '23 6 * * *'
+    - cron: '23 8 * * *'
   workflow_dispatch: 
 
 jobs:
@@ -27,5 +27,5 @@ jobs:
       - name: Ligando a Usina (Rodando o Script)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
         run: python usina.py
