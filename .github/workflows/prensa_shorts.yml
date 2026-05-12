@@ -1,0 +1,36 @@
+name: Prensa de Shorts (Matrix)
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # 07:00 BRT (Para o Short das 08:00)
+    - cron: '0 15 * * *' # 12:00 BRT (Para o Short das 13:00)
+    - cron: '0 21 * * *' # 18:00 BRT (Para o Short das 19:00)
+    - cron: '0 0 * * *'  # 21:00 BRT (Para o Short das 22:00)
+  workflow_dispatch: 
+
+jobs:
+  renderizar_shorts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        horario: 
+          - '08:00'
+          - '13:00'
+          - '19:00'
+          - '22:00'
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
+      - env:
+          GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
+          YOUTUBE_TOKEN_PT: ${{ secrets.YOUTUBE_TOKEN_PT }}
+          HORARIO_ALVO: ${{ matrix.horario }}
+        run: python publicador_shorts.py
