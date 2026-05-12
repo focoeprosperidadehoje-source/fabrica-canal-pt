@@ -63,7 +63,7 @@ for d_str, h_str in zip(valores_coluna_a, valores_coluna_b):
         try:
             d_obj = datetime.datetime.strptime(d_str, '%Y-%m-%d').date()
             if d_obj >= limite_passado:
-                if d_obj not in dias_existentes: dias_existentes[d_obj] = []
+                if d_obj not in dias_existentes: dias_existentes[d_obj] =[]
                 dias_existentes[d_obj].append(h_str)
         except: pass
 
@@ -99,9 +99,14 @@ for video in grade_para_processar:
     Tema do dia: {pilar_do_dia}. Foco: {foco_teologico}. Dirigido a: {persona_prompt}.
     
     ESTRUTURA OBRIGATÓRIA DO ROTEIRO (GUION):
-    1. GANCHO (10 segundos): Uma frase empática sobre a dor do fiel, seguida de um convite para rezar.
+    1. GANCHO (Início): A primeira frase do vídeo. DEVE ser a continuação lógica da frase final do vídeo.
     2. ORAÇÃO: Escreva EXATAMENTE esta oração: "{oracao_padrao}"
-    3. CTA FINAL: "Clique no link aqui na tela para fazer a oração completa comigo. Deus te abençoe."
+    3. FRASE DE LOOP (Final): A última frase do vídeo. DEVE deixar um gancho gramatical que se conecte perfeitamente com a primeira frase do vídeo.
+    
+    EXEMPLO DE EFEITO LOOP PERFEITO:
+    Final do vídeo (Frase de Loop): "Por isso, feche os olhos e receba..."
+    Início do vídeo (Gancho): "...a paz que só Deus pode te dar nesta hora."
+    (Quando o vídeo repete automaticamente, o espectador ouve a frase contínua: "Por isso, feche os olhos e receba a paz que só Deus pode te dar nesta hora.")
     
     REGRAS:
     - O título deve ser chamativo e ter a hashtag #Shorts no final.
@@ -109,8 +114,8 @@ for video in grade_para_processar:
     
     FORMATO EXATO:
     TITULO: [Título magnético - #Shorts]
-    GUION: [Roteiro completo]
-    DESC: [Descrição curta convidando para o vídeo longo]
+    GUION: [Roteiro completo com o efeito loop]
+    DESC: [Descrição curta convidando para visitar o canal e as playlists]
     TAGS: [Tags separadas por vírgulas]
     """
     
@@ -131,7 +136,7 @@ for video in grade_para_processar:
         
         titulo_final = re.sub(r'[*"\[\]]', '', t_match.group(1)).strip() if t_match else "Oração Poderosa #Shorts"
         roteiro_final = g_match.group(1).strip() if g_match else texto_ia 
-        desc_final = d_match.group(1).strip() if d_match else "Assista ao vídeo completo no canal!"
+        desc_final = d_match.group(1).strip() if d_match else "Visite nosso canal para orações completas!"
         tags_final = re.sub(r'[*\[\]]', '', tg_match.group(1)).strip() if tg_match else "shorts, oração, fé"
         
         nova_linha = [str(data_alvo), horario, "Pronto p/ Áudio", persona, idioma, pilar_do_dia, titulo_final, roteiro_final, tags_final, desc_final, "N/A", "N/A"]
