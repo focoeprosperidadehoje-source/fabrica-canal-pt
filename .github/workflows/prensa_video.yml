@@ -2,8 +2,8 @@ name: 2. Prensa de Vídeos (Matrix)
 
 on:
   schedule:
-    - cron: '0 12 * * *' # 09:00 BRT
-    - cron: '0 18 * * *' # 15:00 BRT
+    - cron: '0 11 * * *' # 08:00 BRT
+    - cron: '0 17 * * *' # 14:00 BRT
   workflow_dispatch: 
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           wget -q -O Anton.ttf https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf
       - run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 Pillow gspread pytz edge-tts
       - env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          YOUTUBE_TOKEN_ES: ${{ secrets.YOUTUBE_TOKEN_ES }}
+          GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
+          YOUTUBE_TOKEN_PT: ${{ secrets.YOUTUBE_TOKEN_PT }}
           HORARIO_ALVO: ${{ matrix.horario }}
         run: python publicador.py
