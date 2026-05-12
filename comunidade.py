@@ -34,12 +34,12 @@ canal_response = youtube.channels().list(part='id,contentDetails', mine=True).ex
 MEU_CANAL_ID = canal_response['items'][0]['id']
 UPLOADS_PLAYLIST_ID = canal_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
-print("💰 INICIANDO O VENDEDOR")
+print("💰 INICIANDO O VENDEDOR (COMENTÁRIOS FIXADOS)")
 texto_fixo = next((str(c.get('Texto Fixo', c.get('Texto_Fixo', ''))) for c in configs if str(c.get('Idioma', '')).upper() == 'PT'), "")
 
 if texto_fixo:
     limite_24h = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=24)
-    playlist_req = youtube.playlistItems().list(part='snippet', playlistId=UPLOADS_PLAYLIST_ID, maxResults=10).execute()
+    playlist_req = youtube.playlistItems().list(part='snippet', playlistId=UPLOADS_PLAYLIST_ID, maxResults=15).execute()
     video_ids = [item['snippet']['resourceId']['videoId'] for item in playlist_req.get('items',[])]
     
     if video_ids:
@@ -53,20 +53,24 @@ if texto_fixo:
                     comentarios = youtube.commentThreads().list(part='snippet', videoId=v_id, maxResults=100).execute()
                     if not any(t['snippet']['topLevelComment']['snippet'].get('authorChannelId', {}).get('value') == MEU_CANAL_ID for t in comentarios.get('items',[])):
                         
-                        link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln" 
-                        if "manhã" in v_titulo.lower(): link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx"
-                        elif "noite" in v_titulo.lower() or "dormir" in v_titulo.lower(): link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+                        # RADAR DE SHORTS: Define o texto do comentário fixado
+                        if "#shorts" in v_titulo.lower():
+                            comentario_final = f"{texto_fixo}\n\n🙏 Que esta oração rápida abençoe seu dia! Convidamos você a visitar nosso canal para fazer as orações completas.\n\nNossas Playlists:\n🌅 Orações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\n🌌 Orações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+                        else:
+                            link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln" 
+                            if "manhã" in v_titulo.lower(): link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx"
+                            elif "noite" in v_titulo.lower() or "dormir" in v_titulo.lower(): link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+                            comentario_final = f"{texto_fixo}\n\nContinue orando conosco aqui: {link_playlist}"
                         
-                        comentario_final = f"{texto_fixo}\n\nContinue orando conosco aqui: {link_playlist}"
                         youtube.commentThreads().insert(part="snippet", body={"snippet": {"videoId": v_id, "topLevelComment": {"snippet": {"textOriginal": comentario_final}}}}).execute()
-                        print(f"   ✅ Comentário postado no vídeo: {v_titulo[:30]}")
+                        print(f"   ✅ Comentário fixado postado no vídeo: {v_titulo[:30]}")
                         time.sleep(2)
                 except: pass
 
 print("\n🕊️ INICIANDO O PASTOR DIGITAL (COM CURTIDAS E RESPOSTAS PERSONALIZADAS)")
 try:
-    threads = youtube.commentThreads().list(part="snippet,replies", allThreadsRelatedToChannelId=MEU_CANAL_ID, maxResults=15).execute()
-    for thread in threads.get('items', []):
+    threads = youtube.commentThreads().list(part="snippet,replies", allThreadsRelatedToChannelId=MEU_CANAL_ID, maxResults=20).execute()
+    for thread in threads.get('items',[]):
         top = thread['snippet']['topLevelComment']['snippet']
         comentario_id = thread['snippet']['topLevelComment']['id']
         
