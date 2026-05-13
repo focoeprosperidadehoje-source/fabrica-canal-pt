@@ -9,7 +9,8 @@ from googleapiclient.discovery import build as build_drive
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 GOOGLE_JSON = os.environ.get("GOOGLE_CREDENTIALS_PT")
-YT_TOKEN_JSON = os.environ.get("YOUTUBE_TOKEN_PT")
+# PUXANDO A CHAVE EXCLUSIVA DOS SHORTS PARA NÃO GASTAR A COTA PRINCIPAL
+YT_TOKEN_JSON = os.environ.get("YOUTUBE_TOKEN_PT_SHORTS")
 HORARIO_ALVO = os.environ.get("HORARIO_ALVO")
 
 print(f"🚀 INICIANDO SERVIDOR MATRIX SHORTS PARA: {HORARIO_ALVO}")
