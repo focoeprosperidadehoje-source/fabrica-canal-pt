@@ -42,12 +42,20 @@ GRADE_SHORTS =[
     {"horario": "22:00", "personagem": "Jesus", "idioma": "PT", "foco": "Noite: Dormir em paz."}
 ]
 
-aba = gc.open_by_key(ID_PLANILHA).worksheet("PT_SHORTS")
+MAPA_SINCRONIA = {
+    "08:00": "06:00",
+    "13:00": "12:00",
+    "19:00": "18:00",
+    "22:00": "21:00"
+}
 
-todas_linhas = aba.get_all_values()
+aba_shorts = gc.open_by_key(ID_PLANILHA).worksheet("PT_SHORTS")
+aba_longos = gc.open_by_key(ID_PLANILHA).worksheet("PT") 
+
+todas_linhas = aba_shorts.get_all_values()
 if len(todas_linhas) > 500:
-    aba.delete_rows(2, 100)
-    todas_linhas = aba.get_all_values()
+    aba_shorts.delete_rows(2, 100)
+    todas_linhas = aba_shorts.get_all_values()
 
 proxima_linha_vazia = len(todas_linhas) + 1
 
@@ -87,9 +95,21 @@ if not data_alvo:
 pilar_do_dia = PILARES[data_alvo.weekday()]
 print(f"\n📅 DATA ALVO SHORTS: {data_alvo} | Pilar: {pilar_do_dia}")
 
+dados_longos = aba_longos.get_all_values()
+
 for video in grade_para_processar:
     horario, persona, idioma, foco_teologico = video["horario"], video["personagem"].upper(), video["idioma"], video["foco"]
     print(f"🎬 PRODUZINDO SHORT: {horario} | {persona}")
+    
+    horario_longo_ref = MAPA_SINCRONIA[horario]
+    titulo_referencia = ""
+    for linha in dados_longos[1:]:
+        if len(linha) > 6 and linha[0].strip() == str(data_alvo) and linha[1].strip() == horario_longo_ref:
+            titulo_referencia = linha[6].strip() 
+            break
+            
+    contexto_eco = f"O vídeo longo correspondente tem o título: '{titulo_referencia}'. O Short DEVE ser um eco deste tema." if titulo_referencia else ""
+    if titulo_referencia: print(f"   🔗 Sincronizado com o vídeo longo: {titulo_referencia}")
     
     persona_prompt = "Jesus Cristo" if persona == 'JESUS' else "Nossa Senhora Aparecida"
     oracao_padrao = "Pai Nosso que estais nos céus, santificado seja o vosso nome. Venha a nós o vosso reino, seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje. Perdoai-nos as nossas ofensas, assim como nós perdoamos a quem nos tem ofendido. E não nos deixeis cair em tentação, mas livrai-nos do mal. Amém." if persona == 'JESUS' else "Ave Maria, cheia de graça, o Senhor é convosco. Bendita sois vós entre as mulheres, e bendito é o fruto do vosso ventre, Jesus. Santa Maria, Mãe de Deus, rogai por nós, pecadores, agora e na hora da nossa morte. Amém."
@@ -97,23 +117,23 @@ for video in grade_para_processar:
     prompt_principal = f"""
     Atue como um guia espiritual. Crie um roteiro para um vídeo SHORT do YouTube (máximo 45 segundos de fala).
     Tema do dia: {pilar_do_dia}. Foco: {foco_teologico}. Dirigido a: {persona_prompt}.
+    {contexto_eco}
     
     ESTRUTURA OBRIGATÓRIA DO ROTEIRO (GUION):
-    1. GANCHO (Início): A primeira frase do vídeo. DEVE ser a continuação lógica da frase final do vídeo.
+    1. GANCHO (Início): A primeira frase do vídeo. OBRIGATÓRIO começar com reticências minúsculas ("...").
     2. ORAÇÃO: Escreva EXATAMENTE esta oração: "{oracao_padrao}"
-    3. FRASE DE LOOP (Final): A última frase do vídeo. DEVE deixar um gancho gramatical que se conecte perfeitamente com a primeira frase do vídeo.
+    3. FRASE DE LOOP (Final): A última frase do vídeo. OBRIGATÓRIO terminar com reticências ("..."). Ela deve se conectar perfeitamente com o início.
     
-    EXEMPLO DE EFEITO LOOP PERFEITO:
+    EXEMPLO DE EFEITO LOOP PERFEITO (Siga este modelo gramatical):
     Final do vídeo (Frase de Loop): "Por isso, feche os olhos e receba..."
     Início do vídeo (Gancho): "...a paz que só Deus pode te dar nesta hora."
-    (Quando o vídeo repete automaticamente, o espectador ouve a frase contínua: "Por isso, feche os olhos e receba a paz que só Deus pode te dar nesta hora.")
     
     REGRAS:
-    - O título deve ser chamativo e ter a hashtag #Shorts no final.
+    - O título deve começar com "Oração Rápida: " seguido do tema, e terminar com a hashtag #Shorts.
     - SEM marcações de tempo, SEM asteriscos, SEM emojis no roteiro.
     
     FORMATO EXATO:
-    TITULO: [Título magnético - #Shorts]
+    TITULO: [Oração Rápida: Tema - #Shorts]
     GUION: [Roteiro completo com o efeito loop]
     DESC: [Descrição curta convidando para visitar o canal e as playlists]
     TAGS: [Tags separadas por vírgulas]
@@ -134,13 +154,13 @@ for video in grade_para_processar:
         d_match = re.search(r'DESC:\s*(.*?)(?=TAGS:|T[IÍ]TULO:|GUI[OÓ]N:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         tg_match = re.search(r'TAGS:\s*(.*?)(?=T[IÍ]TULO:|GUI[OÓ]N:|DESC:|$)', texto_ia, re.IGNORECASE | re.DOTALL)
         
-        titulo_final = re.sub(r'[*"\[\]]', '', t_match.group(1)).strip() if t_match else "Oração Poderosa #Shorts"
+        titulo_final = re.sub(r'[*"\[\]]', '', t_match.group(1)).strip() if t_match else "Oração Rápida #Shorts"
         roteiro_final = g_match.group(1).strip() if g_match else texto_ia 
-        desc_final = d_match.group(1).strip() if d_match else "Visite nosso canal para orações completas!"
+        desc_final = d_match.group(1).strip() if d_match else "Assista ao vídeo completo no canal!"
         tags_final = re.sub(r'[*\[\]]', '', tg_match.group(1)).strip() if tg_match else "shorts, oração, fé"
         
         nova_linha = [str(data_alvo), horario, "Pronto p/ Áudio", persona, idioma, pilar_do_dia, titulo_final, roteiro_final, tags_final, desc_final, "N/A", "N/A"]
-        aba.update(values=[nova_linha], range_name=f"A{proxima_linha_vazia}:L{proxima_linha_vazia}")
+        aba_shorts.update(values=[nova_linha], range_name=f"A{proxima_linha_vazia}:L{proxima_linha_vazia}")
         print(f"   ✅ SUCESSO! Short da linha {proxima_linha_vazia} preenchido.")
         proxima_linha_vazia += 1 
         time.sleep(3)
