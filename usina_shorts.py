@@ -109,13 +109,17 @@ for video in grade_para_processar:
             break
             
     contexto_eco = f"O vídeo longo correspondente tem o título: '{titulo_referencia}'. O Short DEVE ser um eco deste tema." if titulo_referencia else ""
-    if titulo_referencia: print(f"   🔗 Sincronizado com o vídeo longo: {titulo_referencia}")
     
     persona_prompt = "Jesus Cristo" if persona == 'JESUS' else "Nossa Senhora Aparecida"
-    oracao_padrao = "Pai Nosso que estais nos céus, santificado seja o vosso nome. Venha a nós o vosso reino, seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje. Perdoai-nos as nossas ofensas, assim como nós perdoamos a quem nos tem ofendido. E não nos deixeis cair em tentação, mas livrai-nos do mal. Amém." if persona == 'JESUS' else "Ave Maria, cheia de graça, o Senhor é convosco. Bendita sois vós entre as mulheres, e bendito é o fruto do vosso ventre, Jesus. Santa Maria, Mãe de Deus, rogai por nós, pecadores, agora e na hora da nossa morte. Amém."
+    
+    # ORAÇÕES COM PAUSAS FORÇADAS (Reticências) PARA A VOZ NEURAL RESPIRAR
+    if persona == 'JESUS':
+        oracao_padrao = "Pai Nosso que estais nos céus... santificado seja o vosso nome... Venha a nós o vosso reino... seja feita a vossa vontade, assim na terra como no céu... O pão nosso de cada dia nos dai hoje... Perdoai-nos as nossas ofensas... assim como nós perdoamos a quem nos tem ofendido... E não nos deixeis cair em tentação... mas livrai-nos do mal... Amém."
+    else:
+        oracao_padrao = "Ave Maria, cheia de graça... o Senhor é convosco... Bendita sois vós entre as mulheres... e bendito é o fruto do vosso ventre, Jesus... Santa Maria, Mãe de Deus... rogai por nós, pecadores... agora e na hora da nossa morte... Amém."
 
     prompt_principal = f"""
-    Atue como um guia espiritual. Crie um roteiro para um vídeo SHORT do YouTube (máximo 45 segundos de fala).
+    Atue como um guia espiritual. Crie um roteiro para um vídeo SHORT do YouTube (máximo 35 segundos de fala).
     Tema do dia: {pilar_do_dia}. Foco: {foco_teologico}. Dirigido a: {persona_prompt}.
     {contexto_eco}
     
@@ -124,11 +128,12 @@ for video in grade_para_processar:
     2. ORAÇÃO: Escreva EXATAMENTE esta oração: "{oracao_padrao}"
     3. FRASE DE LOOP (Final): A última frase do vídeo. OBRIGATÓRIO terminar com reticências ("..."). Ela deve se conectar perfeitamente com o início.
     
-    EXEMPLO DE EFEITO LOOP PERFEITO (Siga este modelo gramatical):
+    EXEMPLO DE EFEITO LOOP PERFEITO:
     Final do vídeo (Frase de Loop): "Por isso, feche os olhos e receba..."
     Início do vídeo (Gancho): "...a paz que só Deus pode te dar nesta hora."
     
-    REGRAS:
+    REGRAS DE FLUIDEZ:
+    - Escreva frases fluidas e naturais. Use reticências (...) para marcar pausas de respiração e emoção.
     - O título deve começar com "Oração Rápida: " seguido do tema, e terminar com a hashtag #Shorts.
     - SEM marcações de tempo, SEM asteriscos, SEM emojis no roteiro.
     
