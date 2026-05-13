@@ -9,6 +9,7 @@ on:
 jobs:
   renderizar_e_publicar:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # 🛡️ TRAVA ANTI-ZUMBI: Mata o processo se passar de 30 min
     strategy:
       matrix:
         horario: 
@@ -20,15 +21,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3'
-      - run: |
-          sudo apt-get update
+          
+      - name: Instalar FFmpeg e Fontes
+        run: |
+          sudo apt-get update -y || true
           sudo apt-get install -y ffmpeg
           wget -q -O Anton.ttf https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf
-      - run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 Pillow gspread pytz edge-tts
-      - env:
+          
+      - name: Instalar Bibliotecas Python
+        run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 Pillow gspread pytz edge-tts
+        
+      - name: Rodar Publicador de Vídeos Longos
+        env:
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
           YOUTUBE_TOKEN_PT: ${{ secrets.YOUTUBE_TOKEN_PT }}
           HORARIO_ALVO: ${{ matrix.horario }}
