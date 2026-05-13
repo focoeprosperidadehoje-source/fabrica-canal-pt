@@ -11,6 +11,7 @@ on:
 jobs:
   renderizar_shorts:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # 🛡️ TRAVA ANTI-ZUMBI: Mata o processo se passar de 30 min
     strategy:
       matrix:
         horario: 
@@ -22,14 +23,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3'
-      - run: |
-          sudo apt-get update
+          
+      - name: Instalar FFmpeg
+        run: |
+          sudo apt-get update -y || true
           sudo apt-get install -y ffmpeg
-      - run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
-      - env:
+          
+      - name: Instalar Bibliotecas Python
+        run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
+        
+      - name: Rodar Publicador de Shorts
+        env:
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
           YOUTUBE_TOKEN_PT_SHORTS: ${{ secrets.YOUTUBE_TOKEN_PT_SHORTS }}
           HORARIO_ALVO: ${{ matrix.horario }}
