@@ -31,6 +31,6 @@ jobs:
       - run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
       - env:
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
-          YOUTUBE_TOKEN_PT: ${{ secrets.YOUTUBE_TOKEN_PT }}
+          YOUTUBE_TOKEN_PT_SHORTS: ${{ secrets.YOUTUBE_TOKEN_PT_SHORTS }}
           HORARIO_ALVO: ${{ matrix.horario }}
         run: python publicador_shorts.py
