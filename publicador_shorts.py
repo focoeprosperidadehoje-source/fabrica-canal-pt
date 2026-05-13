@@ -4,12 +4,12 @@ from google.oauth2.credentials import Credentials as YTCredentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
+import textwrap
 from googleapiclient.discovery import build as build_drive
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 GOOGLE_JSON = os.environ.get("GOOGLE_CREDENTIALS_PT")
-# PUXANDO A CHAVE EXCLUSIVA DOS SHORTS PARA NÃO GASTAR A COTA PRINCIPAL
 YT_TOKEN_JSON = os.environ.get("YOUTUBE_TOKEN_PT_SHORTS")
 HORARIO_ALVO = os.environ.get("HORARIO_ALVO")
 
@@ -58,6 +58,14 @@ def obter_duracao(arquivo):
     try: return float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', arquivo], capture_output=True, text=True).stdout.strip())
     except: return 60 
 
+def formatar_vtt(caminho_vtt):
+    if not os.path.exists(caminho_vtt): return
+    with open(caminho_vtt, 'r', encoding='utf-8') as f: linhas = f.readlines()
+    with open(caminho_vtt, 'w', encoding='utf-8') as f:
+        for l in linhas:
+            if '-->' in l or l.strip() == '' or l.startswith('WEBVTT'): f.write(l)
+            else: f.write(textwrap.fill(l.strip(), width=30) + '\n')
+
 dados = aba_shorts.get_all_records()
 col_status = aba_shorts.row_values(1).index('Status') + 1
 
@@ -67,7 +75,6 @@ for index, linha in enumerate(dados, start=2):
         
         print(f"🎬 INICIANDO SHORT: Linha {index} - {persona} às {horario_str}")
         
-        # LÓGICA DE APARECIDA O ANO TODO PARA SHORTS
         id_pasta_img = ID_PASTA_JESUS_VERT if persona == 'JESUS' else ID_PASTA_MARIA_APARECIDA_VERT
         voz_escolhida = "pt-BR-AntonioNeural" if persona == 'JESUS' else "pt-BR-FranciscaNeural"
         
@@ -81,17 +88,27 @@ for index, linha in enumerate(dados, start=2):
         arquivos_musica = listar_arquivos(ID_PASTA_MUSICAS, ('.mp3', '.wav'))
         musica_local = baixar_arquivo(random.choice(arquivos_musica)['id'], f"{PASTA_TEMP}/musica.mp3")
 
-        caminho_mp3, caminho_txt = f"{PASTA_TEMP}/audio.mp3", f"{PASTA_TEMP}/roteiro.txt"
+        caminho_mp3, caminho_vtt, caminho_txt = f"{PASTA_TEMP}/audio.mp3", f"{PASTA_TEMP}/legenda.vtt", f"{PASTA_TEMP}/roteiro.txt"
         with open(caminho_txt, "w", encoding="utf-8") as f: f.write(roteiro.replace('*', '').replace('_', '').replace('"', ''))
             
-        print(f"   🎙️ Gerando Voz Neural ({voz_escolhida})...")
-        subprocess.run(["edge-tts", "--voice", voz_escolhida, "--rate=-10%", "--file", caminho_txt, "--write-media", caminho_mp3], capture_output=True)
-        duracao_audio = obter_duracao(caminho_mp3)
+        print(f"   🎙️ Gerando Voz Neural e Legendas ({voz_escolhida})...")
+        subprocess.run(["edge-tts", "--voice", voz_escolhida, "--rate=-10%", "--file", caminho_txt, "--write-media", caminho_mp3, "--write-subtitles", caminho_vtt], capture_output=True)
+        formatar_vtt(caminho_vtt)
+        
+        # CORTE DE SILÊNCIO (Bisturi do FFmpeg para o Loop Perfeito)
+        print("   ✂️ Removendo silêncio final do áudio para o Loop...")
+        caminho_mp3_trimmed = f"{PASTA_TEMP}/audio_trimmed.mp3"
+        subprocess.run(f'ffmpeg -y -i "{caminho_mp3}" -af "areverse,silenceremove=start_periods=1:start_duration=0.05:start_threshold=-50dB,areverse" "{caminho_mp3_trimmed}"', shell=True, capture_output=True)
+        
+        duracao_audio = obter_duracao(caminho_mp3_trimmed)
 
-        print("   🎞️ Fabricando blocos visuais verticais (1080x1920)...")
+        print("   🎞️ Fabricando blocos visuais verticais (1080x1920) com Barra no Rodapé...")
         tempo_acumulado = 0
         lista_ts =[]
         contador_chunk = 0
+        
+        # IDENTIDADE VISUAL: Cor da barra baseada no horário
+        cor_hex = "FFD700" if "08:00" in horario_str else "FF8C00" if "13:00" in horario_str else "32CD32" if "19:00" in horario_str else "00BFFF"
         
         while tempo_acumulado < duracao_audio:
             arquivo_ts = f"{PASTA_TEMP}/chunk_{contador_chunk}.ts"
@@ -101,7 +118,8 @@ for index, linha in enumerate(dados, start=2):
             efeito_zoom = random.choice(['in', 'out'])
             zoom_cmd = "zoompan=z='1.0+0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24"
             
-            subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,{zoom_cmd}" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
+            # Adiciona a barra colorida de 30px no RODAPÉ (y=1890)
+            subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,{zoom_cmd},drawbox=x=0:y=1890:w=1080:h=30:color={cor_hex}@1.0:t=fill" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
             
             tempo_acumulado += duracao_padrao
             lista_ts.append(arquivo_ts)
@@ -115,12 +133,13 @@ for index, linha in enumerate(dados, start=2):
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{arquivo_concat}" -c copy "{video_mudo}"', shell=True, capture_output=True)
 
         video_final = f"{PASTA_TEMP}/final_short.mp4"
-        subprocess.run(f'ffmpeg -y -i "{video_mudo}" -i "{caminho_mp3}" -stream_loop -1 -i "{musica_local}" -filter_complex "[1:a]apad[v_pad];[2:a]volume=0.15[bgm];[v_pad][bgm]amix=inputs=2:duration=longest[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 192k -t {duracao_audio} "{video_final}"', shell=True, capture_output=True)
+        # O corte exato (-t duracao_audio) com o áudio sem silêncio garante o Loop Perfeito
+        subprocess.run(f'ffmpeg -y -i "{video_mudo}" -i "{caminho_mp3_trimmed}" -stream_loop -1 -i "{musica_local}" -filter_complex "[1:a]apad[v_pad];[2:a]volume=0.15[bgm];[v_pad][bgm]amix=inputs=2:duration=longest[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 192k -t {duracao_audio} "{video_final}"', shell=True, capture_output=True)
 
         tags_limpas = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚçÇ ,]', '', tags_str)
         tags_lista = [t.strip()[:30] for t in tags_limpas.split(',') if t.strip()][:15]
         
-        texto_convite = "\n\n🙏 Assista à oração completa e profunda no nosso canal! Clique no link do vídeo relacionado na tela.\n\nNossas Playlists:\nOrações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\nOrações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+        texto_convite = "\n\n🙏 Para a oração completa e profunda, visite nosso canal. Publicamos orações poderosas 4 vezes ao dia.\n\nNossas Playlists:\nOrações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\nOrações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
         
         try: 
             agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
@@ -135,6 +154,11 @@ for index, linha in enumerate(dados, start=2):
             try:
                 video_id = youtube.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(video_final, chunksize=-1, resumable=True, mimetype="video/mp4")).execute().get("id")
                 print(f"   🎉 SUCESSO! Short {video_id} publicado.")
+                
+                # UPLOAD DA LEGENDA (VTT) PARA O SHORT
+                try:
+                    if os.path.exists(caminho_vtt): youtube.captions().insert(part="snippet", body={"snippet": {"videoId": video_id, "language": "pt-BR", "name": "Português", "isDraft": False}}, media_body=MediaFileUpload(caminho_vtt)).execute()
+                except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
                 
                 try:
                     pid = "PLELsEoZ8x93QGBWUutLm405W5FccVsSGa" if persona == 'JESUS' else "PLELsEoZ8x93Tc4W1A3tGZdU2JF_x1LCeL"
