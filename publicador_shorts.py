@@ -29,7 +29,6 @@ drive_service = build_drive('drive', 'v3', credentials=creds_sheets)
 PASTA_TEMP = "/tmp/fabrica_shorts"
 os.makedirs(PASTA_TEMP, exist_ok=True)
 
-# IDs DAS PASTAS VERTICAIS
 ID_PASTA_JESUS_VERT = "1Xzw7URlFGoMqpMyfOycOpZpnUoX2KmGq"
 ID_PASTA_MARIA_APARECIDA_VERT = "1isunRtA4zPkei2sDiTi5VZic1tc3e5gD"
 ID_PASTA_MUSICAS = "1gxZA1TlQPzuf737XOo_n8blfOThnddgm"
@@ -63,8 +62,13 @@ def formatar_vtt(caminho_vtt):
     with open(caminho_vtt, 'r', encoding='utf-8') as f: linhas = f.readlines()
     with open(caminho_vtt, 'w', encoding='utf-8') as f:
         for l in linhas:
-            if '-->' in l or l.strip() == '' or l.startswith('WEBVTT'): f.write(l)
-            else: f.write(textwrap.fill(l.strip(), width=30) + '\n')
+            if '-->' in l:
+                # Força a legenda a ficar na parte inferior da tela (75% da altura)
+                f.write(l.strip() + ' line:75% align:center\n')
+            elif l.strip() == '' or l.startswith('WEBVTT'):
+                f.write(l)
+            else:
+                f.write(textwrap.fill(l.strip(), width=30) + '\n')
 
 dados = aba_shorts.get_all_records()
 col_status = aba_shorts.row_values(1).index('Status') + 1
@@ -91,23 +95,22 @@ for index, linha in enumerate(dados, start=2):
         caminho_mp3, caminho_vtt, caminho_txt = f"{PASTA_TEMP}/audio.mp3", f"{PASTA_TEMP}/legenda.vtt", f"{PASTA_TEMP}/roteiro.txt"
         with open(caminho_txt, "w", encoding="utf-8") as f: f.write(roteiro.replace('*', '').replace('_', '').replace('"', ''))
             
-        print(f"   🎙️ Gerando Voz Neural e Legendas ({voz_escolhida})...")
-        subprocess.run(["edge-tts", "--voice", voz_escolhida, "--rate=-10%", "--file", caminho_txt, "--write-media", caminho_mp3, "--write-subtitles", caminho_vtt], capture_output=True)
+        print(f"   🎙️ Gerando Voz Neural Aveludada e Legendas ({voz_escolhida})...")
+        # VELOCIDADE -20% E PITCH -10Hz PARA TIRAR O TOM ROBÓTICO
+        subprocess.run(["edge-tts", "--voice", voz_escolhida, "--rate=-20%", "--pitch=-10Hz", "--file", caminho_txt, "--write-media", caminho_mp3, "--write-subtitles", caminho_vtt], capture_output=True)
         formatar_vtt(caminho_vtt)
         
-        # CORTE DE SILÊNCIO (Bisturi do FFmpeg para o Loop Perfeito)
         print("   ✂️ Removendo silêncio final do áudio para o Loop...")
         caminho_mp3_trimmed = f"{PASTA_TEMP}/audio_trimmed.mp3"
         subprocess.run(f'ffmpeg -y -i "{caminho_mp3}" -af "areverse,silenceremove=start_periods=1:start_duration=0.05:start_threshold=-50dB,areverse" "{caminho_mp3_trimmed}"', shell=True, capture_output=True)
         
         duracao_audio = obter_duracao(caminho_mp3_trimmed)
 
-        print("   🎞️ Fabricando blocos visuais verticais (1080x1920) com Barra no Rodapé...")
+        print("   🎞️ Fabricando blocos visuais verticais (1080x1920) com Barra Grossa no Rodapé...")
         tempo_acumulado = 0
         lista_ts =[]
         contador_chunk = 0
         
-        # IDENTIDADE VISUAL: Cor da barra baseada no horário
         cor_hex = "FFD700" if "08:00" in horario_str else "FF8C00" if "13:00" in horario_str else "32CD32" if "19:00" in horario_str else "00BFFF"
         
         while tempo_acumulado < duracao_audio:
@@ -118,8 +121,8 @@ for index, linha in enumerate(dados, start=2):
             efeito_zoom = random.choice(['in', 'out'])
             zoom_cmd = "zoompan=z='1.0+0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24"
             
-            # Adiciona a barra colorida de 30px no RODAPÉ (y=1890)
-            subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,{zoom_cmd},drawbox=x=0:y=1890:w=1080:h=30:color={cor_hex}@1.0:t=fill" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
+            # BARRA GROSSA (80px) NO RODAPÉ (y=1840)
+            subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,{zoom_cmd},drawbox=x=0:y=1840:w=1080:h=80:color={cor_hex}@1.0:t=fill" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
             
             tempo_acumulado += duracao_padrao
             lista_ts.append(arquivo_ts)
@@ -133,7 +136,6 @@ for index, linha in enumerate(dados, start=2):
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{arquivo_concat}" -c copy "{video_mudo}"', shell=True, capture_output=True)
 
         video_final = f"{PASTA_TEMP}/final_short.mp4"
-        # O corte exato (-t duracao_audio) com o áudio sem silêncio garante o Loop Perfeito
         subprocess.run(f'ffmpeg -y -i "{video_mudo}" -i "{caminho_mp3_trimmed}" -stream_loop -1 -i "{musica_local}" -filter_complex "[1:a]apad[v_pad];[2:a]volume=0.15[bgm];[v_pad][bgm]amix=inputs=2:duration=longest[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 192k -t {duracao_audio} "{video_final}"', shell=True, capture_output=True)
 
         tags_limpas = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚçÇ ,]', '', tags_str)
@@ -147,7 +149,8 @@ for index, linha in enumerate(dados, start=2):
             publish_at = data_hora_alvo.isoformat() if data_hora_alvo > agora_br else None
         except: publish_at = None
         
-        body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{texto_convite}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False}}
+        # SELO OFICIAL DE IA ATIVADO (selfDeclaredMadeWithAlteredContent)
+        body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{texto_convite}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
         
         for tentativa in range(3):
@@ -155,7 +158,6 @@ for index, linha in enumerate(dados, start=2):
                 video_id = youtube.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(video_final, chunksize=-1, resumable=True, mimetype="video/mp4")).execute().get("id")
                 print(f"   🎉 SUCESSO! Short {video_id} publicado.")
                 
-                # UPLOAD DA LEGENDA (VTT) PARA O SHORT
                 try:
                     if os.path.exists(caminho_vtt): youtube.captions().insert(part="snippet", body={"snippet": {"videoId": video_id, "language": "pt-BR", "name": "Português", "isDraft": False}}, media_body=MediaFileUpload(caminho_vtt)).execute()
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
