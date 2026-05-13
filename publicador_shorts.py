@@ -33,24 +33,40 @@ ID_PASTA_JESUS_VERT = "1Xzw7URlFGoMqpMyfOycOpZpnUoX2KmGq"
 ID_PASTA_MARIA_APARECIDA_VERT = "1isunRtA4zPkei2sDiTi5VZic1tc3e5gD"
 ID_PASTA_MUSICAS = "1gxZA1TlQPzuf737XOo_n8blfOThnddgm"
 
+# ESCUDO ANTI-QUEDA: Tenta baixar 4 vezes antes de desistir
 def baixar_arquivo(file_id, destino):
-    request = drive_service.files().get_media(fileId=file_id)
-    with open(destino, 'wb') as f: f.write(request.execute())
-    return destino
+    for tentativa in range(4):
+        try:
+            request = drive_service.files().get_media(fileId=file_id)
+            with open(destino, 'wb') as f: f.write(request.execute())
+            return destino
+        except Exception as e:
+            print(f"   ⚠️ Google Drive falhou (Erro 503). Tentando novamente em 5s... ({tentativa+1}/4)")
+            time.sleep(5)
+    raise Exception(f"Falha definitiva ao baixar arquivo {file_id}")
 
+# ESCUDO ANTI-QUEDA: Tenta listar a pasta 4 vezes antes de desistir
 def listar_arquivos(folder_id, extensoes=None):
     res =[]
     page_token = None
     while True:
-        try:
-            response = drive_service.files().list(q=f"'{folder_id}' in parents and trashed=false", spaces='drive', fields='nextPageToken, files(id, name)', pageToken=page_token).execute()
-            for f in response.get('files',[]):
-                if extensoes:
-                    if f['name'].lower().endswith(extensoes): res.append(f)
-                else: res.append(f)
-            page_token = response.get('nextPageToken', None)
-            if not page_token: break
-        except: break
+        for tentativa in range(4):
+            try:
+                response = drive_service.files().list(q=f"'{folder_id}' in parents and trashed=false", spaces='drive', fields='nextPageToken, files(id, name)', pageToken=page_token).execute()
+                break
+            except Exception as e:
+                print(f"   ⚠️ Erro ao ler pasta {folder_id}. Tentando novamente... ({tentativa+1}/4)")
+                time.sleep(5)
+        else:
+            print(f"   ❌ Falha definitiva ao ler pasta {folder_id}.")
+            return res
+
+        for f in response.get('files',[]):
+            if extensoes:
+                if f['name'].lower().endswith(extensoes): res.append(f)
+            else: res.append(f)
+        page_token = response.get('nextPageToken', None)
+        if not page_token: break
     return res
 
 def obter_duracao(arquivo):
@@ -96,7 +112,6 @@ for index, linha in enumerate(dados, start=2):
         with open(caminho_txt, "w", encoding="utf-8") as f: f.write(roteiro.replace('*', '').replace('_', '').replace('"', ''))
             
         print(f"   🎙️ Gerando Voz Neural Aveludada e Legendas ({voz_escolhida})...")
-        # VELOCIDADE -20% E PITCH -10Hz PARA TIRAR O TOM ROBÓTICO
         subprocess.run(["edge-tts", "--voice", voz_escolhida, "--rate=-20%", "--pitch=-10Hz", "--file", caminho_txt, "--write-media", caminho_mp3, "--write-subtitles", caminho_vtt], capture_output=True)
         formatar_vtt(caminho_vtt)
         
@@ -149,7 +164,7 @@ for index, linha in enumerate(dados, start=2):
             publish_at = data_hora_alvo.isoformat() if data_hora_alvo > agora_br else None
         except: publish_at = None
         
-        # SELO OFICIAL DE IA ATIVADO (selfDeclaredMadeWithAlteredContent)
+        # SELO OFICIAL DE IA ATIVADO
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{texto_convite}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
         
