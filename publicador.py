@@ -23,7 +23,7 @@ gc = gspread.authorize(creds_sheets)
 aba_principal = gc.open_by_key("1KgIjWrLUVlllhlZB1R9fkHGxxZlLsax1aOVGZrYwgnU").worksheet("PT")
 
 try: configs = gc.open_by_key("1KgIjWrLUVlllhlZB1R9fkHGxxZlLsax1aOVGZrYwgnU").worksheet("Configuracoes").get_all_records()
-except: configs =[]
+except: configs = []
 
 creds_yt = YTCredentials.from_authorized_user_info(json.loads(YT_TOKEN_JSON))
 if creds_yt and creds_yt.expired and creds_yt.refresh_token: creds_yt.refresh(Request())
@@ -44,7 +44,6 @@ ID_PASTA_THUMB_JESUS_DIA = "1d1KcGUy895ccivgio9QxVbIzSdNeCTN5"
 ID_PASTA_THUMB_JESUS_NOITE = "1BFOWc6rNlhSpNAOatF2aWK7hEjPqMMzk"
 ID_PASTA_THUMB_MARIA = "1C04BHKkhGcxv1NRxxrmlDkmIdTO__S4k"
 
-# ESCUDO ANTI-QUEDA: Tenta baixar 4 vezes antes de desistir
 def baixar_arquivo(file_id, destino):
     for tentativa in range(4):
         try:
@@ -52,13 +51,12 @@ def baixar_arquivo(file_id, destino):
             with open(destino, 'wb') as f: f.write(request.execute())
             return destino
         except Exception as e:
-            print(f"   ⚠️ Google Drive falhou (Erro 503). Tentando novamente em 5s... ({tentativa+1}/4)")
+            print(f"   ⚠️ Google Drive falhou. Tentando novamente... ({tentativa+1}/4)")
             time.sleep(5)
     raise Exception(f"Falha definitiva ao baixar arquivo {file_id}")
 
-# ESCUDO ANTI-QUEDA: Tenta listar a pasta 4 vezes antes de desistir
 def listar_arquivos(folder_id, extensoes=None):
-    res =[]
+    res = []
     page_token = None
     while True:
         for tentativa in range(4):
@@ -72,7 +70,7 @@ def listar_arquivos(folder_id, extensoes=None):
             print(f"   ❌ Falha definitiva ao ler pasta {folder_id}.")
             return res
 
-        for f in response.get('files',[]):
+        for f in response.get('files', []):
             if extensoes:
                 if f['name'].lower().endswith(extensoes): res.append(f)
             else: res.append(f)
@@ -86,9 +84,8 @@ def obter_duracao(arquivo):
 
 def filtro_broll(nome, horario):
     n = nome.lower()
-    if "06:00" in horario or "12:00" in horario: return any(x in n for x in["dia", "velas"])
-    elif "18:00" in horario: return any(x in n for x in["velas", "flores", "noite"])
-    elif "21:00" in horario: return any(x in n for x in["noite", "cosmos", "velas"])
+    if "06:00" in horario: return any(x in n for x in ["dia", "velas"])
+    elif "18:00" in horario: return any(x in n for x in ["velas", "flores", "noite", "cosmos"])
     return True
 
 def formatar_vtt(caminho_vtt):
@@ -116,7 +113,7 @@ def criar_thumbnail(img_path, texto_curto, horario, persona, caminho_saida):
     img = img.resize((1920, 1080)).convert("RGB") 
     
     draw = ImageDraw.Draw(img)
-    cor_barra = "#FFD700" if "06:00" in horario else "#FF8C00" if "12:00" in horario else "#32CD32" if "18:00" in horario else "#00BFFF"
+    cor_barra = "#FFD700" if "06:00" in horario else "#00BFFF"
     draw.rectangle([(0, 0), (120, 1080)], fill=cor_barra)
     
     texto = texto_curto.upper()
@@ -131,7 +128,7 @@ def criar_thumbnail(img_path, texto_curto, horario, persona, caminho_saida):
         font_size -= 5 
         
     y_text = (1080 - (len(linhas) * font_size * 1.1)) / 2
-    cores =["white", "#FFD700", "white"] 
+    cores = ["white", "#FFD700", "white"] 
     for i, linha in enumerate(linhas):
         w = draw.textlength(linha, font=font)
         x_text = 960 + ((960 - w) / 2)
@@ -167,12 +164,12 @@ for index, linha in enumerate(dados, start=2):
         if not arquivos_img: continue
         
         random.shuffle(arquivos_img)
-        imgs_locais =[baixar_arquivo(arquivos_img[i]['id'], f"{PASTA_TEMP}/img_{i}.jpg") for i in range(min(45, len(arquivos_img)))]
+        imgs_locais = [baixar_arquivo(arquivos_img[i]['id'], f"{PASTA_TEMP}/img_{i}.jpg") for i in range(min(45, len(arquivos_img)))]
         
         arquivos_thumb = listar_arquivos(id_pasta_thumb, ('.jpg', '.jpeg', '.png'))
         if persona == 'MARIA':
-            if is_aparecida: arquivos_thumb =[f for f in arquivos_thumb if 'aparecida' in f['name'].lower()]
-            else: arquivos_thumb =[f for f in arquivos_thumb if 'aparecida' not in f['name'].lower()]
+            if is_aparecida: arquivos_thumb = [f for f in arquivos_thumb if 'aparecida' in f['name'].lower()]
+            else: arquivos_thumb = [f for f in arquivos_thumb if 'aparecida' not in f['name'].lower()]
             
         thumb_base_local = baixar_arquivo(random.choice(arquivos_thumb)['id'], f"{PASTA_TEMP}/thumb_base.jpg")
 
@@ -181,12 +178,12 @@ for index, linha in enumerate(dados, start=2):
         musica_local = baixar_arquivo(random.choice(arquivos_musica)['id'], f"{PASTA_TEMP}/musica.mp3")
         
         arquivos_sfx = listar_arquivos(ID_PASTA_SFX, ('.mp3', '.wav'))
-        sfx_file = next((f for f in arquivos_sfx if ("passaro" in f['name'].lower() if "06:00" in horario_str or "12:00" in horario_str else "vento" in f['name'].lower())), None)
+        sfx_file = next((f for f in arquivos_sfx if ("passaro" in f['name'].lower() if "06:00" in horario_str else "vento" in f['name'].lower())), None)
         sfx_local = baixar_arquivo(sfx_file['id'], f"{PASTA_TEMP}/sfx.mp3") if sfx_file else None
 
-        brolls_validos =[f for f in listar_arquivos(ID_PASTA_BROLLS, ('.mp4', '.mov')) if filtro_broll(f['name'], horario_str)]
+        brolls_validos = [f for f in listar_arquivos(ID_PASTA_BROLLS, ('.mp4', '.mov')) if filtro_broll(f['name'], horario_str)]
         random.shuffle(brolls_validos)
-        brolls_locais =[baixar_arquivo(brolls_validos[i]['id'], f"{PASTA_TEMP}/broll_{i}.mp4") for i in range(min(15, len(brolls_validos)))]
+        brolls_locais = [baixar_arquivo(brolls_validos[i]['id'], f"{PASTA_TEMP}/broll_{i}.mp4") for i in range(min(15, len(brolls_validos)))]
 
         caminho_mp3, caminho_vtt, caminho_txt = f"{PASTA_TEMP}/audio.mp3", f"{PASTA_TEMP}/legenda.vtt", f"{PASTA_TEMP}/roteiro.txt"
         with open(caminho_txt, "w", encoding="utf-8") as f: f.write(roteiro.replace('*', '').replace('_', '').replace('"', ''))
@@ -199,12 +196,12 @@ for index, linha in enumerate(dados, start=2):
         formatar_vtt(caminho_vtt)
         duracao_audio = obter_duracao(caminho_mp3)
         
-        tem_extensao = horario_str in["18:00", "21:00"]
+        tem_extensao = horario_str == "18:00"
         duracao_total = duracao_audio + 300 if tem_extensao else duracao_audio
 
         print("   🎞️ Fabricando os blocos visuais...")
         tempo_acumulado = 0
-        lista_ts =[]
+        lista_ts = []
         contador_chunk = 0
         
         baralho_imgs_uso = imgs_locais.copy()
@@ -256,7 +253,7 @@ for index, linha in enumerate(dados, start=2):
         
         texto_fixo = next((str(c.get('Texto Fixo', c.get('Texto_Fixo', ''))) for c in configs if str(c.get('Idioma', '')).upper() == 'PT'), "")
         tags_limpas = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚçÇ ,]', '', tags_str)
-        tags_lista =[t.strip()[:30] for t in tags_limpas.split(',') if t.strip()][:15]
+        tags_lista = [t.strip()[:30] for t in tags_limpas.split(',') if t.strip()][:15]
         
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
@@ -270,7 +267,6 @@ for index, linha in enumerate(dados, start=2):
                 publish_at = None 
         except: publish_at = None
         
-        # SELO OFICIAL DE IA ATIVADO
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
         
@@ -288,7 +284,7 @@ for index, linha in enumerate(dados, start=2):
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
                 
                 try:
-                    pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9" if persona == 'JESUS' and "21:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
+                    pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
                     if pid: youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível adicionar à playlist: {e}")
                 
