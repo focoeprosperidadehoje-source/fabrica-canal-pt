@@ -2,30 +2,19 @@ name: Usina Automática Diária
 
 on:
   schedule:
-    - cron: '23 4 * * *'
-    - cron: '23 6 * * *'
-    - cron: '23 8 * * *'
+    - cron: '0 4,5,6 * * *' # 01:00, 02:00, 03:00 BRT
   workflow_dispatch: 
 
 jobs:
   produzir_videos:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Baixando o código da Usina
-        uses: actions/checkout@v4
-
-      - name: Preparando o Python (O Motor)
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3'
-
-      - name: Instalando as Ferramentas
-        run: |
-          pip install google-genai gspread
-
-      - name: Ligando a Usina (Rodando o Script)
-        env:
+      - run: pip install --upgrade google-genai gspread
+      - env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
         run: python usina.py
