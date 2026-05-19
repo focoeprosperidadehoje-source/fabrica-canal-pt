@@ -33,7 +33,6 @@ ID_PASTA_JESUS_VERT = "1Xzw7URlFGoMqpMyfOycOpZpnUoX2KmGq"
 ID_PASTA_MARIA_APARECIDA_VERT = "1isunRtA4zPkei2sDiTi5VZic1tc3e5gD"
 ID_PASTA_MUSICAS = "1gxZA1TlQPzuf737XOo_n8blfOThnddgm"
 
-# ESCUDO ANTI-QUEDA: Tenta baixar 4 vezes antes de desistir
 def baixar_arquivo(file_id, destino):
     for tentativa in range(4):
         try:
@@ -41,13 +40,12 @@ def baixar_arquivo(file_id, destino):
             with open(destino, 'wb') as f: f.write(request.execute())
             return destino
         except Exception as e:
-            print(f"   ⚠️ Google Drive falhou (Erro 503). Tentando novamente em 5s... ({tentativa+1}/4)")
+            print(f"   ⚠️ Google Drive falhou. Tentando novamente... ({tentativa+1}/4)")
             time.sleep(5)
     raise Exception(f"Falha definitiva ao baixar arquivo {file_id}")
 
-# ESCUDO ANTI-QUEDA: Tenta listar a pasta 4 vezes antes de desistir
 def listar_arquivos(folder_id, extensoes=None):
-    res =[]
+    res = []
     page_token = None
     while True:
         for tentativa in range(4):
@@ -61,7 +59,7 @@ def listar_arquivos(folder_id, extensoes=None):
             print(f"   ❌ Falha definitiva ao ler pasta {folder_id}.")
             return res
 
-        for f in response.get('files',[]):
+        for f in response.get('files', []):
             if extensoes:
                 if f['name'].lower().endswith(extensoes): res.append(f)
             else: res.append(f)
@@ -79,7 +77,6 @@ def formatar_vtt(caminho_vtt):
     with open(caminho_vtt, 'w', encoding='utf-8') as f:
         for l in linhas:
             if '-->' in l:
-                # Força a legenda a ficar na parte inferior da tela (75% da altura)
                 f.write(l.strip() + ' line:75% align:center\n')
             elif l.strip() == '' or l.startswith('WEBVTT'):
                 f.write(l)
@@ -123,10 +120,10 @@ for index, linha in enumerate(dados, start=2):
 
         print("   🎞️ Fabricando blocos visuais verticais (1080x1920) com Barra Grossa no Rodapé...")
         tempo_acumulado = 0
-        lista_ts =[]
+        lista_ts = []
         contador_chunk = 0
         
-        cor_hex = "FFD700" if "08:00" in horario_str else "FF8C00" if "13:00" in horario_str else "32CD32" if "19:00" in horario_str else "00BFFF"
+        cor_hex = "#FF8C00" # Laranja para as 14:00
         
         while tempo_acumulado < duracao_audio:
             arquivo_ts = f"{PASTA_TEMP}/chunk_{contador_chunk}.ts"
@@ -136,7 +133,6 @@ for index, linha in enumerate(dados, start=2):
             efeito_zoom = random.choice(['in', 'out'])
             zoom_cmd = "zoompan=z='1.0+0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24" if efeito_zoom == 'in' else "zoompan=z='1.15-0.0008*on':d=400:x='iw/2-(iw/zoom)/2':y='ih/2-(ih/zoom)/2':s=1080x1920:fps=24"
             
-            # BARRA GROSSA (80px) NO RODAPÉ (y=1840)
             subprocess.run(f'ffmpeg -y -loop 1 -framerate 24 -i "{ativo}" -t {duracao_padrao} -vf "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,{zoom_cmd},drawbox=x=0:y=1840:w=1080:h=80:color={cor_hex}@1.0:t=fill" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{arquivo_ts}"', shell=True, capture_output=True)
             
             tempo_acumulado += duracao_padrao
@@ -164,7 +160,6 @@ for index, linha in enumerate(dados, start=2):
             publish_at = data_hora_alvo.isoformat() if data_hora_alvo > agora_br else None
         except: publish_at = None
         
-        # SELO OFICIAL DE IA ATIVADO
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{texto_convite}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
         
@@ -178,7 +173,7 @@ for index, linha in enumerate(dados, start=2):
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
                 
                 try:
-                    pid = "PLELsEoZ8x93QGBWUutLm405W5FccVsSGa" if persona == 'JESUS' else "PLELsEoZ8x93Tc4W1A3tGZdU2JF_x1LCeL"
+                    pid = "PLELsEoZ8x93Tc4W1A3tGZdU2JF_x1LCeL"
                     youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível adicionar à playlist: {e}")
                 
