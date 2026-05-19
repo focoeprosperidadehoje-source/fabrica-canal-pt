@@ -2,42 +2,29 @@ name: Prensa de Shorts (Matrix)
 
 on:
   schedule:
-    - cron: '0 10 * * *' # 07:00 BRT (Para o Short das 08:00)
-    - cron: '0 15 * * *' # 12:00 BRT (Para o Short das 13:00)
-    - cron: '0 21 * * *' # 18:00 BRT (Para o Short das 19:00)
-    - cron: '0 0 * * *'  # 21:00 BRT (Para o Short das 22:00)
+    - cron: '0 15,16 * * *' # 12:00, 13:00 BRT
   workflow_dispatch: 
 
 jobs:
   renderizar_shorts:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # 🛡️ TRAVA ANTI-ZUMBI: Mata o processo se passar de 30 min
+    timeout-minutes: 30
     strategy:
       matrix:
         horario: 
-          - '08:00'
-          - '13:00'
-          - '19:00'
-          - '22:00'
+          - '14:00'
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
           python-version: '3'
-          
-      - name: Instalar FFmpeg
-        run: |
+      - run: |
           sudo apt-get update -y || true
           sudo apt-get install -y ffmpeg
-          
-      - name: Instalar Bibliotecas Python
-        run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
-        
-      - name: Rodar Publicador de Shorts
-        env:
+      - run: pip install --upgrade google-api-python-client google-auth-oauthlib google-auth-httplib2 gspread pytz edge-tts
+      - env:
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
           YOUTUBE_TOKEN_PT_SHORTS: ${{ secrets.YOUTUBE_TOKEN_PT_SHORTS }}
           HORARIO_ALVO: ${{ matrix.horario }}
