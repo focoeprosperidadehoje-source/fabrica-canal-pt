@@ -2,41 +2,31 @@ name: 2. Prensa de Vídeos (Matrix)
 
 on:
   schedule:
-    - cron: '0 11 * * *' # 08:00 BRT
-    - cron: '0 17 * * *' # 14:00 BRT
+    - cron: '0 7,8,19,20 * * *' # 04:00, 05:00, 16:00, 17:00 BRT
   workflow_dispatch: 
 
 jobs:
   renderizar_e_publicar:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # 🛡️ TRAVA ANTI-ZUMBI: Mata o processo se passar de 30 min
+    timeout-minutes: 30
     strategy:
       matrix:
         horario: 
           - '06:00'
-          - '12:00'
           - '18:00'
-          - '21:00'
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
           python-version: '3'
-          
-      - name: Instalar FFmpeg e Fontes
-        run: |
+      - run: |
           sudo apt-get update -y || true
           sudo apt-get install -y ffmpeg
           wget -q -O Anton.ttf https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf
-          
-      - name: Instalar Bibliotecas Python
-        run: pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 Pillow gspread pytz edge-tts
-        
-      - name: Rodar Publicador de Vídeos Longos
-        env:
+      - run: pip install --upgrade google-api-python-client google-auth-oauthlib google-auth-httplib2 Pillow gspread pytz edge-tts
+      - env:
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
           YOUTUBE_TOKEN_PT: ${{ secrets.YOUTUBE_TOKEN_PT }}
           HORARIO_ALVO: ${{ matrix.horario }}
