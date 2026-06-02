@@ -52,22 +52,21 @@ valores_coluna_b = [linha[1].strip() for linha in todas_linhas[1:] if len(linha)
 
 dias_existentes = {}
 hoje = datetime.date.today()
-limite_passado = hoje - datetime.timedelta(days=2)
 
 for d_str, h_str in zip(valores_coluna_a, valores_coluna_b):
     if d_str and h_str:
         try:
             d_obj = datetime.datetime.strptime(d_str, '%Y-%m-%d').date()
-            if d_obj >= limite_passado:
+            if d_obj >= hoje:
                 if d_obj not in dias_existentes: dias_existentes[d_obj] = []
                 dias_existentes[d_obj].append(h_str)
         except: pass
 
-meta_estoque = hoje + datetime.timedelta(days=5) 
+meta_estoque = hoje + datetime.timedelta(days=5)
 data_alvo = None
 grade_para_processar = []
 
-data_check = limite_passado
+data_check = hoje
 while data_check <= meta_estoque:
     horarios_presentes = dias_existentes.get(data_check, [])
     if len(horarios_presentes) < 1:
@@ -101,7 +100,7 @@ for video in grade_para_processar:
     persona_prompt = "Nossa Senhora Aparecida"
     
     # PAUSA DRAMÁTICA NO NOME DE JESUS
-    oracao_padrao = "Ave Maria, cheia de graça... o Senhor é convosco... Bendita sois vós entre as mulheres... e bendito é o fruto do vosso ventre... Jesus... Santa Maria, Mãe de Deus... rogai por nós, pecadores... agora e na hora da nossa morte... Amém."
+    oracao_padrao = "Ave Maria, cheia de graça... o Senhor é convosco... Bendita sois vós entre as mulheres... e bendito é o fruto do vosso ventre Jesus... Santa Maria, Mãe de Deus... rogai por nós, pecadores... agora e na hora da nossa morte... Amém."
 
     prompt_principal = f"""
     Atue como um guia espiritual. Crie um roteiro para um vídeo SHORT do YouTube (máximo 35 segundos de fala).
@@ -109,13 +108,14 @@ for video in grade_para_processar:
     {contexto_eco}
     
     ESTRUTURA OBRIGATÓRIA DO ROTEIRO (GUION):
-    1. GANCHO (Início): A primeira frase do vídeo. OBRIGATÓRIO começar com reticências minúsculas ("...").
+    1. GANCHO (Início): A primeira frase do vídeo. OBRIGATÓRIO começar com reticências minúsculas ("..."). Ela é o complemento sintático da frase final — juntas formam uma única frase contínua e completa.
     2. ORAÇÃO: Escreva EXATAMENTE esta oração: "{oracao_padrao}"
-    3. FRASE DE LOOP (Final): A última frase do vídeo. OBRIGATÓRIO terminar com reticências ("..."). Ela deve se conectar perfeitamente com o início.
-    
-    EXEMPLO DE EFEITO LOOP PERFEITO:
-    Final do vídeo (Frase de Loop): "Por isso, feche os olhos e receba..."
-    Início do vídeo (Gancho): "...a paz que só Deus pode te dar nesta hora."
+    3. FRASE DE LOOP (Final): A última frase do vídeo. OBRIGATÓRIO terminar com reticências ("..."). Ela deve ser SINTATICAMENTE INCOMPLETA — uma oração aberta cujo complemento natural é exatamente a frase inicial. O ouvinte não percebe a quebra porque o cérebro une fim e início como uma única frase contínua.
+
+    EXEMPLO DE LOOP SINTÁTICO PERFEITO:
+    Final (incompleto): "...é por isso que hoje você precisa receber..."
+    Início (complemento): "...a graça que Maria guardou especialmente para você."
+    Lidos em sequência formam: "é por isso que hoje você precisa receber a graça que Maria guardou especialmente para você."
     
     REGRAS DE FLUIDEZ:
     - Escreva frases fluidas e naturais. Use reticências (...) para marcar pausas de respiração e emoção.

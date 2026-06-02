@@ -60,8 +60,8 @@ PILARES = {
     4: "Misericórdia e Cura Física", 5: "O Manto de Maria", 6: "Milagres e Gratidão"
 }
 GRADE_DIARIA = [
-    {"horario": "06:00", "personagem": "Jesus", "idioma": "PT", "foco": "Manhã: Consagração, sabedoria divina e direção para o dia."},
-    {"horario": "18:00", "personagem": "Maria", "idioma": "PT", "foco": "HÍBRIDO: Tratar a dor do Pilar do Dia e, no final, fazer a transição para a oração da noite, pedindo sono profundo, alívio da ansiedade e proteção noturna."}
+    {"horario": "06:00", "personagem": "Jesus", "idioma": "PT", "foco": "Manhã: Consagração, sabedoria divina e direção para o dia.", "periodo": "nesta manhã"},
+    {"horario": "18:00", "personagem": "Maria", "idioma": "PT", "foco": "HÍBRIDO: Tratar a dor do Pilar do Dia e, no final, fazer a transição para a oração da noite, pedindo sono profundo, alívio da ansiedade e proteção noturna.", "periodo": "nesta noite"}
 ]
 
 aba = gc.open_by_key(ID_PLANILHA).worksheet("PT")
@@ -77,22 +77,21 @@ valores_coluna_b = [linha[1].strip() for linha in todas_linhas[1:] if len(linha)
 
 dias_existentes = {}
 hoje = datetime.date.today()
-limite_passado = hoje - datetime.timedelta(days=2)
 
 for d_str, h_str in zip(valores_coluna_a, valores_coluna_b):
     if d_str and h_str:
         try:
             d_obj = datetime.datetime.strptime(d_str, '%Y-%m-%d').date()
-            if d_obj >= limite_passado:
+            if d_obj >= hoje:
                 if d_obj not in dias_existentes: dias_existentes[d_obj] = []
                 dias_existentes[d_obj].append(h_str)
         except: pass
 
-meta_estoque = hoje + datetime.timedelta(days=5) 
+meta_estoque = hoje + datetime.timedelta(days=5)
 data_alvo = None
 grade_para_processar = []
 
-data_check = limite_passado
+data_check = hoje
 while data_check <= meta_estoque:
     horarios_presentes = dias_existentes.get(data_check, [])
     if len(horarios_presentes) < 2:
@@ -112,11 +111,13 @@ print(f"\n📅 DATA ALVO: {data_alvo} | Pilar: {pilar_do_dia}")
 esperas_exponenciais = [10, 20, 40, 80, 120]
 
 for video in grade_para_processar:
-    horario, persona, idioma, foco_teologico = video["horario"], video["personagem"].upper(), video["idioma"], video["foco"]
+    horario, persona, idioma, foco_teologico, periodo_dia = video["horario"], video["personagem"].upper(), video["idioma"], video["foco"], video["periodo"]
     print(f"🎬 PRODUZINDO: {horario} | {persona}")
-    
+
+    if data_alvo.weekday() == 4:
+        foco_teologico += " OBRIGATÓRIO: Aprofunde o tema da Misericórdia e do Perdão." if horario == "06:00" else " OBRIGATÓRIO: Conecte o tema com a Paixão de Cristo e o Sacramento da Reconciliação."
+
     persona_prompt = "Jesus Cristo" if persona == 'JESUS' else "Nossa Senhora (Maria)"
-    periodo_dia = "nesta manhã" if horario == "06:00" else "nesta noite"
 
     prompt_tema = f"Atue como Teólogo. Crie um tema curto (máx 8 palavras) para uma oração. Pilar: '{pilar_do_dia}', dirigida a '{persona_prompt}', momento: '{foco_teologico}'. Sazonalidade: '{contexto_sazonal}'. APENAS o tema, sem aspas ou asteriscos."
     tema_gerado = None
@@ -145,11 +146,12 @@ for video in grade_para_processar:
        - Autoridade/Agenda (10-15s): Diga que {persona_prompt} tem uma palavra de libertação e peça para ficar até o final.
     4. CTA IMEDIATO: Peça naturalmente no início: "Se você crê, digite 'Amém, eu recebo' nos comentários agora mesmo".
     5. RESET DE ATENÇÃO (MEIO DO VÍDEO): Exatamente na metade do roteiro, insira uma frase falada para reconectar o espectador.
-    
+    6. GANCHOS INVISÍVEIS DE RETENÇÃO: A cada 300 a 400 palavras, incorpore organicamente — sem que o fiel perceba a técnica — um dos seguintes recursos: (a) ANTECIPAÇÃO: anuncie que algo importante será revelado logo adiante, sem revelar ainda; (b) REVELAÇÃO PARCIAL: entregue uma parte da resposta espiritual e sinalize que há mais; (c) VALIDAÇÃO EMOCIONAL: nomeie exatamente o que o fiel está sentindo naquele momento, criando reconhecimento profundo; (d) VIRADA DE BLOCO: faça uma transição inesperada de tom — de súplica para gratidão, de dor para esperança — que renove a atenção. Os ganchos devem ser invisíveis: o fiel não percebe a técnica, apenas sente que não consegue parar de ouvir. Nunca quebre o clima devocional.
+
     REGRAS GERAIS:
-    6. PROIBIDO MENCIONAR HORÁRIOS EXATOS: Nunca diga "06:00" ou "18:00". Use apenas "{periodo_dia}".
-    7. PAUSAS: OBRIGATÓRIO usar abundantes pontos suspensivos (...) para forçar pausas na voz da IA.
-    8. ANTI-JSON: Escreva em TEXTO PLANO. PROIBIDO JSON, chaves {{ }} ou asteriscos (*).
+    7. PROIBIDO MENCIONAR HORÁRIOS EXATOS: Nunca diga "06:00" ou "18:00". Use apenas "{periodo_dia}".
+    8. PAUSAS: OBRIGATÓRIO usar abundantes pontos suspensivos (...) para forçar pausas na voz da IA.
+    9. ANTI-JSON: Escreva em TEXTO PLANO. PROIBIDO JSON, chaves {{ }} ou asteriscos (*).
     {regra_persona}
     {regra_meditacao}
     
