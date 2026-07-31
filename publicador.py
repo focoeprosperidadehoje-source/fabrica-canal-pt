@@ -257,8 +257,10 @@ for index, linha in enumerate(dados, start=2):
         
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
-        
-        try: 
+
+        bloco_live = "\n\n🔴 EM BREVE — AO VIVO 24 HORAS\nEm breve estaremos transmitindo de forma contínua 24 horas por dia. Suas súplicas, pedidos de oração e os nomes dos seus entes queridos serão mencionados em oração de forma ininterrupta. Ative o 🔔 sininho para ser um dos primeiros a se juntar a este momento de graça!"
+
+        try:
             agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
             data_hora_alvo = pytz.timezone('America/Sao_Paulo').localize(datetime.datetime.strptime(f"{data_str} {horario_str}", "%Y-%m-%d %H:%M"))
             if data_hora_alvo > agora_br:
@@ -267,7 +269,7 @@ for index, linha in enumerate(dados, start=2):
                 publish_at = None 
         except: publish_at = None
         
-        body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private" if publish_at else "public", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
+        body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}{bloco_live}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private" if publish_at else "public", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
 
         for tentativa in range(3):

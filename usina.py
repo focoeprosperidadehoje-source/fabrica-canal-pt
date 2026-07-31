@@ -4,6 +4,8 @@ from google.oauth2.service_account import Credentials
 import gspread
 
 CHAVE_API = os.environ.get("GEMINI_API_KEY")
+CHAVE_API_2 = os.environ.get("GEMINI_API_KEY_2", "")
+CHAVES_GEMINI = [k for k in [CHAVE_API, CHAVE_API_2] if k]
 GOOGLE_JSON = os.environ.get("GOOGLE_CREDENTIALS_PT")
 
 print("🔐 Autenticando no Google Sheets via Service Account...")
@@ -28,6 +30,18 @@ def obter_cascata_de_modelos():
         return ['gemini-2.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash']
 
 modelos_cascata = obter_cascata_de_modelos()
+
+def _gerar(modelo, prompt):
+    for chave in CHAVES_GEMINI:
+        try:
+            c = Client(api_key=chave, http_options={'api_version': 'v1'})
+            return c.models.generate_content(model=modelo, contents=prompt).text
+        except Exception as e:
+            if "429" in str(e) and chave != CHAVES_GEMINI[-1]:
+                print(f"[WARN] 429 na chave ...{chave[-6:]}. Tentando chave 2...")
+                continue
+            raise
+    raise RuntimeError("Todas as chaves Gemini falharam.")
 
 def calcular_contexto_sazonal(data_alvo):
     ano = data_alvo.year
@@ -126,7 +140,7 @@ for video in grade_para_processar:
     tema_gerado = None
     for i in range(5):
         try:
-            tema_gerado = client.models.generate_content(model=modelos_cascata[i], contents=prompt_tema).text.replace('*', '').replace('"', '').replace('[', '').replace(']', '').strip()
+            tema_gerado = _gerar(modelos_cascata[i], prompt_tema).replace('*', '').replace('"', '').replace('[', '').replace(']', '').strip()
             break 
         except: time.sleep(esperas_exponenciais[i])
             
@@ -136,12 +150,18 @@ for video in grade_para_processar:
     regra_meditacao = "OBRIGATÓRIO: Na descrição (DESC), adicione um aviso destacado dizendo que ao final do vídeo há 5 minutos de música celestial para dormir/meditar." if horario == "18:00" else ""
     regra_persona = "OBRIGATÓRIO: Como você se dirige a Jesus, É PROIBIDO mencionar Maria ou Nossa Senhora." if persona == 'JESUS' else "OBRIGATÓRIO: Como você se dirige a Maria, DEVE usar as invocações 'Nossa Senhora', 'Mãe' ou 'Virgem Maria'."
 
+    instrucao_titulo = (
+        "TITULO:[Título magnético. OBRIGATÓRIO começar com 'Nossa Senhora' ou 'Aparecida'. FORMATO: 'Nossa Senhora [Dor do fiel] [promessa urgente]'. Ex: 'Nossa Senhora Cura Sua Família Esta Noite'. SEM DATA. SEM ASTERISCOS OU COLCHETES]"
+        if persona == 'MARIA' else
+        "TITULO:[Título magnético. OBRIGATÓRIO começar com a dor/situação do fiel, NUNCA com 'Jesus' ou 'Oração'. FORMATO: '[Dor crítica do fiel] — [promessa de alívio urgente]'. Ex: 'Sua Família Sofre — Faça Esta Oração AGORA'. SEM DATA. SEM ASTERISCOS OU COLCHETES]"
+    )
+
     prompt_principal = f"""
     Atue como um guia espiritual empático. Escreva uma oração extensa de 1500 a 1800 palavras sobre "{tema_gerado}" dirigida a {persona_prompt}. 
     CONTEXTO: Período do dia: "{periodo_dia}". Enfoque: "{foco_teologico}". Sazonalidade: "{contexto_sazonal}".
     
     REGRAS DE RETENÇÃO E COPYWRITING (MUITO IMPORTANTE):
-    1. FÓRMULA DO TÍTULO: O título DEVE OBRIGATORIAMENTE seguir a fórmula: [Dor do Fiel] + [Solução/Milagre]. É ESTRITAMENTE PROIBIDO começar o título com a palavra "Oração".
+    1. FÓRMULA DO TÍTULO: Siga EXATAMENTE a instrução de formato abaixo. Para Nossa Senhora: OBRIGATÓRIO começar com 'Nossa Senhora' ou 'Aparecida'. Para Jesus: começar com a dor do fiel. É ESTRITAMENTE PROIBIDO começar com a palavra "Oração".
     2. FÓRMULA DA THUMB: Máximo de 4 palavras. DEVE ser um gatilho de urgência conectado ao tema (Ex: "MILAGRE URGENTE HOJE", "SALVE SUA FAMÍLIA", "FIM DA ANSIEDADE").
     3. REGRA DOS 15 SEGUNDOS (HOOK 3A): O início do roteiro DEVE ter 3 blocos rápidos:
        - Atenção (0-5s): Uma AFIRMAÇÃO EMPÁTICA sobre a dor do fiel. (PROIBIDO usar perguntas diretas).
@@ -159,17 +179,17 @@ for video in grade_para_processar:
     {regra_meditacao}
     
     FORMATO EXATO:
-    TITULO: [Dor + Solução]
+    {instrucao_titulo}
     THUMB: [Gatilho de Urgência conectado ao tema - Máx 4 palavras]
-    GUION: [Oração completa de 1500 a 1800 palabras]
-    DESC: [Descrição de 3 parágrafos com forte SEO]
+    GUION: [Oração completa de 1500 a 1800 palavras]
+    DESC: [Descrição de 3 parágrafos com forte SEO. PRIMEIRO parágrafo: convida para as orações AO VIVO 24h do canal ('Em breve: ore ao vivo conosco 24 horas — ative o sininho para não perder nenhuma oração'). SEGUNDO parágrafo: descrição emocional desta oração. TERCEIRO parágrafo: keywords e hashtags.]
     TAGS: [Tags separadas por vírgulas]
     """
     
     texto_ia = None
     for i in range(5): 
         try:
-            texto_ia = client.models.generate_content(model=modelos_cascata[i], contents=prompt_principal).text
+            texto_ia = _gerar(modelos_cascata[i], prompt_principal)
             break 
         except: time.sleep(esperas_exponenciais[i])
             
