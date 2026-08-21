@@ -2,8 +2,11 @@ name: Prensa de Shorts (Matrix)
 
 on:
   schedule:
-    - cron: '0 15,16 * * *' # 12:00, 13:00 BRT
-  workflow_dispatch: 
+    - cron: '0 8 * * *'   # 05:00 BRT (Short manhã)
+    - cron: '0 9 * * *'   # 06:00 BRT (backup manhã)
+    - cron: '0 15 * * *'  # 12:00 BRT (Short tarde)
+    - cron: '0 16 * * *'  # 13:00 BRT (backup tarde)
+  workflow_dispatch:
 
 jobs:
   renderizar_shorts:
@@ -14,6 +17,7 @@ jobs:
     strategy:
       matrix:
         horario:
+          - '06:00'
           - '14:00'
       fail-fast: false
 

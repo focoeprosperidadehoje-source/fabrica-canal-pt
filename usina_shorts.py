@@ -31,10 +31,12 @@ PILARES = {
     4: "Misericórdia e Cura Física", 5: "O Manto de Maria", 6: "Milagres e Gratidão"
 }
 GRADE_SHORTS = [
+    {"horario": "06:00", "personagem": "Maria", "idioma": "PT", "foco": "Manhã: Sob o manto de Nossa Senhora Aparecida, começa o dia com graça e milagres."},
     {"horario": "14:00", "personagem": "Maria", "idioma": "PT", "foco": "Tarde: Intercessão de Aparecida."}
 ]
 
 MAPA_SINCRONIA = {
+    "06:00": "18:00",
     "14:00": "18:00"
 }
 
