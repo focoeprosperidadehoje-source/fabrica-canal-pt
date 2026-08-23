@@ -93,7 +93,7 @@ for index, linha in enumerate(dados, start=2):
         print(f"🎬 INICIANDO SHORT: Linha {index} - {persona} às {horario_str}")
         
         id_pasta_img = ID_PASTA_JESUS_VERT if persona == 'JESUS' else ID_PASTA_MARIA_APARECIDA_VERT
-        voz_escolhida = "pt-BR-AntonioNeural" if persona == 'JESUS' else "pt-BR-FranciscaNeural"
+        voz_escolhida = "pt-BR-AntonioNeural" if persona == 'JESUS' else "pt-BR-ThalitaMultilingualNeural"
         
         print("   📥 Baixando imagens verticais...")
         arquivos_img = listar_arquivos(id_pasta_img, ('.jpg', '.jpeg', '.png'))

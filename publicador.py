@@ -211,7 +211,7 @@ for index, linha in enumerate(dados, start=2):
             id_pasta_img = ID_PASTA_MARIA_APARECIDA if is_aparecida else ID_PASTA_MARIA_UNIVERSAL
             id_pasta_thumb = ID_PASTA_THUMB_MARIA
             
-        voz_escolhida = "pt-BR-AntonioNeural" if persona == 'JESUS' else "pt-BR-FranciscaNeural"
+        voz_escolhida = "pt-BR-AntonioNeural" if persona == 'JESUS' else "pt-BR-ThalitaMultilingualNeural"
         
         print("   📥 Baixando lote de imagens e B-rolls...")
         arquivos_img = listar_arquivos(id_pasta_img, ('.jpg', '.jpeg', '.png'))
