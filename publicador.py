@@ -325,7 +325,7 @@ for index, linha in enumerate(dados, start=2):
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
 
-        bloco_live = "\n\n🔴 EM BREVE — AO VIVO 24 HORAS\nEm breve estaremos transmitindo de forma contínua 24 horas por dia. Suas súplicas, pedidos de oração e os nomes dos seus entes queridos serão mencionados em oração de forma ininterrupta. Ative o 🔔 sininho para ser um dos primeiros a se juntar a este momento de graça!"
+        bloco_live = "\n\n🔴 AGORA AO VIVO — 24 HORAS COM NOSSA SENHORA\nEstamos transmitindo de forma contínua 24 horas por dia. Suas súplicas, pedidos de oração e os nomes dos seus entes queridos são mencionados em oração de forma ininterrupta. Participe agora! 👉 https://youtube.com/channel/UClATmmCFTo_UDHgfXPjwyqw/live"
 
         try:
             agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
