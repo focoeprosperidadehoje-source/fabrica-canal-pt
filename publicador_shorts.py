@@ -150,7 +150,7 @@ for index, linha in enumerate(dados, start=2):
         tags_limpas = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚçÇ ,]', '', tags_str)
         tags_lista = [t.strip()[:30] for t in tags_limpas.split(',') if t.strip()][:15]
         
-        texto_convite = "\n\n🙏 Para a oração completa e profunda, visite nosso canal. Publicamos orações poderosas 4 vezes ao dia.\n\nNossas Playlists:\nOrações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\nOrações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+        texto_convite = "\n\n🔴 AGORA AO VIVO — 24H COM NOSSA SENHORA 🙏 Junte-se a nós: https://youtube.com/channel/UClATmmCFTo_UDHgfXPjwyqw/live\n\nPara a oração completa e profunda, visite nosso canal. Publicamos orações poderosas todos os dias.\n\nNossas Playlists:\nOrações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\nOrações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
         
         try: 
             agora_br = datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))
