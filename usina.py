@@ -76,7 +76,6 @@ PILARES = {
     4: "Misericórdia e Cura Física", 5: "O Manto de Maria", 6: "Milagres e Gratidão"
 }
 GRADE_DIARIA = [
-    {"horario": "06:00", "personagem": "Jesus", "idioma": "PT", "foco": "Manhã: Consagração, sabedoria divina e direção para o dia.", "periodo": "nesta manhã"},
     {"horario": "18:00", "personagem": "Maria", "idioma": "PT", "foco": "HÍBRIDO: Tratar a dor do Pilar do Dia e, no final, fazer a transição para a oração da noite, pedindo sono profundo, alívio da ansiedade e proteção noturna.", "periodo": "nesta noite"}
 ]
 
