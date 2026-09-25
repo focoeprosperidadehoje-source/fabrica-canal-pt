@@ -194,15 +194,71 @@ def criar_thumbnail(img_path, texto_curto, horario, persona, caminho_saida):
 dados = aba_principal.get_all_records()
 col_status = aba_principal.row_values(1).index('Status') + 1
 
+# ── SLOT 06:00 (Novenas) — travas aprovadas em 2026-09-25 ──────────────────
+# Horizonte: só renderiza 06:00 com até 36h de antecedência (protege a cota da API).
+# Expiração: 06:00 com mais de 3h de atraso NÃO é publicado (evita vídeo fora de ordem / notificação queimada).
+def _janela_06h(linha, index):
+    try:
+        tz = pytz.timezone('America/Sao_Paulo')
+        alvo = tz.localize(datetime.datetime.strptime(f"{str(linha.get('Data', '')).strip()} 06:00", "%Y-%m-%d %H:%M"))
+        agora = datetime.datetime.now(tz)
+        if alvo - agora > datetime.timedelta(hours=36):
+            return False
+        if agora - alvo > datetime.timedelta(hours=3):
+            print(f"   ⏭️ Linha {index} (06:00 de {linha.get('Data')}) expirada — marcando 'Expirado', não será publicada.")
+            try: aba_principal.update_cell(index, col_status, 'Expirado')
+            except Exception as e: print(f"   ⚠️ Falha ao marcar expirado: {e}")
+            return False
+        return True
+    except Exception as e:
+        print(f"   ⚠️ Data inválida na linha {index}: {e}")
+        return False
+
+def _playlist_novena(nome):
+    """Busca a playlist da novena pelo título exato; cria (pública) se não existir."""
+    nome = nome.strip()[:150]
+    try:
+        token = None
+        while True:
+            resp = youtube.playlists().list(part="snippet", mine=True, maxResults=50, pageToken=token).execute()
+            for p in resp.get("items", []):
+                if p["snippet"]["title"].strip() == nome:
+                    return p["id"]
+            token = resp.get("nextPageToken")
+            if not token: break
+        novo = youtube.playlists().insert(part="snippet,status", body={
+            "snippet": {"title": nome, "description": f"{nome} — todos os dias da novena em ordem. Reze conosco e deixe sua intenção nos comentários.", "defaultLanguage": "pt-BR"},
+            "status": {"privacyStatus": "public"}}).execute()
+        print(f"   📂 Playlist criada: {nome} ({novo['id']})")
+        return novo["id"]
+    except Exception as e:
+        print(f"   ⚠️ Playlist da novena indisponível: {e}")
+        return None
+
+def _capitulos_novena(roteiro, duracao):
+    blocos = roteiro.split("\n\n")
+    if len(blocos) != 12 or duracao <= 0:
+        return ""
+    total = sum(len(b) for b in blocos) or 1
+    def t(i): return duracao * sum(len(b) for b in blocos[:i]) / total
+    marcos = [(0, "Abertura e Intenção do Dia"), (3, "Reflexão da Palavra"), (4, "Oração da Novena"),
+              (5, "Súplica do Dia"), (6, "Pai Nosso, Ave Maria e Glória"), (10, "Encerramento e Bênção")]
+    linhas = [f"{format_time(t(i))} {rot}" for i, rot in marcos]
+    return "\n\n⏱️ Capítulos da Novena:\n" + "\n".join(linhas)
+
 for index, linha in enumerate(dados, start=2):
     if str(linha.get('Status', '')).strip() == 'Pronto p/ Áudio' and str(linha.get('Idioma', '')).strip().upper() == 'PT' and str(linha.get('Horario', '')).strip() == HORARIO_ALVO:
+        if HORARIO_ALVO == "06:00" and not _janela_06h(linha, index):
+            continue
         data_str, horario_str, titulo, descricao_ia, tags_str, persona, roteiro = str(linha.get('Data', '')), str(linha.get('Horario', '')), str(linha.get('Titulo', '')), str(linha.get('Descricao', '')), str(linha.get('Tags', '')), str(linha.get('Personagem', '')).upper(), str(linha.get('Roteiro', ''))
         texto_thumb = str(linha.get('Texto_Thumb', linha.get('Texto Thumb', ''))).strip() or " ".join(titulo.split()[:3])
         
         print(f"🎬 INICIANDO: Linha {index} - {persona} às {horario_str}")
         
         data_obj = datetime.datetime.strptime(data_str, '%Y-%m-%d').date()
-        is_aparecida = ("18:00" in horario_str) and (1 <= data_obj.day <= 15) and (data_obj.month == 10)
+        is_aparecida = (1 <= data_obj.day <= 15) and (data_obj.month == 10)
+        _tema_linha = str(linha.get('Tema', ''))
+        novena_info = _tema_linha.split('|') if _tema_linha.startswith('NOVENA|') else None
         
         if persona == 'JESUS':
             id_pasta_img = ID_PASTA_JESUS
@@ -322,6 +378,8 @@ for index, linha in enumerate(dados, start=2):
         
         capitulos = f"\n\n⏱️ Capítulos da Oração:\n{format_time(0)} Início da Oração\n{format_time(duracao_audio * 0.33)} Súplica e Fé\n{format_time(duracao_audio * 0.66)} Entrega e Gratidão"
         if tem_extensao: capitulos += f"\n{format_time(duracao_audio)} Meditação e Paz Profunda"
+        if novena_info:
+            capitulos = _capitulos_novena(roteiro, duracao_audio) or capitulos
 
         bloco_live = "\n\n🔴 AGORA AO VIVO — 24 HORAS COM NOSSA SENHORA\nEstamos transmitindo de forma contínua 24 horas por dia. Suas súplicas, pedidos de oração e os nomes dos seus entes queridos são mencionados em oração de forma ininterrupta. Participe agora! 👉 https://youtube.com/channel/UClATmmCFTo_UDHgfXPjwyqw/live"
 
@@ -334,6 +392,12 @@ for index, linha in enumerate(dados, start=2):
                 publish_at = None 
         except: publish_at = None
         
+        pid_novena = None
+        if novena_info and len(novena_info) >= 2 and novena_info[1].strip():
+            pid_novena = _playlist_novena(novena_info[1])
+            if pid_novena:
+                descricao_ia = f"📿 Reze a novena completa, todos os dias em ordem: https://www.youtube.com/playlist?list={pid_novena}\n\n{descricao_ia}"
+
         body = {"snippet": {"title": titulo[:100], "description": f"{descricao_ia}{capitulos}{bloco_live}\n\n{texto_fixo}", "tags": tags_lista, "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"}, "status": {"privacyStatus": "private" if publish_at else "public", "selfDeclaredMadeForKids": False, "selfDeclaredMadeWithAlteredContent": True}}
         if publish_at: body["status"]["publishAt"] = publish_at
 
@@ -351,7 +415,7 @@ for index, linha in enumerate(dados, start=2):
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível subir a legenda: {e}")
                 
                 try:
-                    pid = "PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if persona == 'JESUS' and "06:00" in horario_str else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
+                    pid = pid_novena or ("PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx" if "06:00" in horario_str and not is_aparecida else "PLELsEoZ8x93SnwuCnkZ3IbGZ77A-Goo7W" if is_aparecida else "PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln")
                     if pid: youtube.playlistItems().insert(part="snippet", body={"snippet": {"playlistId": pid, "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
                 except Exception as e: print(f"   ⚠️ Aviso: Não foi possível adicionar à playlist: {e}")
                 
