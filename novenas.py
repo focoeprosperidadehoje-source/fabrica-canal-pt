@@ -19,7 +19,7 @@ CANAL = "PT"
 TZ = "America/Sao_Paulo"
 
 # Primeiro dia em que o slot 06:00 passa a existir. Antes disso: nada é gerado.
-ATIVACAO_06H = datetime.date(2026, 9, 29)
+ATIVACAO_06H = datetime.date(2026, 9, 26)
 # Início do primeiro ciclo de novena de pedido (dia seguinte à festa de Aparecida).
 EPOCA_PEDIDOS = datetime.date(2026, 10, 13)
 
