@@ -2,7 +2,7 @@ name: Usina Automática Diária
 
 on:
   schedule:
-    - cron: '0 4,5,6 * * *' # 01:00, 02:00, 03:00 BRT
+    - cron: '17 4,5,6 * * *' # 01:17, 02:17, 03:17 BRT (fora da hora cheia: GitHub descarta/atrasa :00)
   workflow_dispatch: 
 
 jobs:
@@ -20,4 +20,4 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
           GOOGLE_CREDENTIALS_PT: ${{ secrets.GOOGLE_CREDENTIALS_PT }}
-        run: python usina.py
+        run: for i in 1 2 3 4 5 6; do python usina.py || echo "execucao $i falhou"; done

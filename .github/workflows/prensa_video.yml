@@ -2,7 +2,7 @@ name: 2. Prensa de Vídeos (Matrix)
 
 on:
   schedule:
-    - cron: '0 7,8,19,20 * * *' # 04:00, 05:00, 16:00, 17:00 BRT
+    - cron: '13 7,8,19,20 * * *' # 04:13, 05:13, 16:13, 17:13 BRT (fora da hora cheia)
   workflow_dispatch: 
 
 jobs:
