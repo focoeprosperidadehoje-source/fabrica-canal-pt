@@ -108,7 +108,7 @@ for data_alvo, grade_para_processar in gaps:
         {contexto_eco}
 
         ESTRUTURA OBRIGATÓRIA DO ROTEIRO (GUION):
-        1. GANCHO (Início): A primeira frase do vídeo. OBRIGATÓRIO começar com reticências minúsculas ("..."). Ela é o complemento sintático da frase final — juntas formam uma única frase contínua e completa.
+        1. GANCHO (Início): A primeira frase do vídeo. OBRIGATÓRIO começar com reticências minúsculas ("..."). Ela é o complemento sintático da frase final — juntas formam uma única frase contínua e completa. REGRA DE RETENÇÃO (obrigatória): nas primeiras 10 palavras a frase inicial fala DIRETO com a dor de quem assiste, em segunda pessoa e ligada ao tema do dia (ex.: "...se alguém da sua casa está doente, esta oração é para você."). Proibido abrir com saudação, contexto ou frase genérica — o espectador decide em 2 segundos se fica.
         2. ORAÇÃO: Escreva EXATAMENTE esta oração: "{oracao_padrao}"
         3. FRASE DE LOOP (Final): A última frase do vídeo. OBRIGATÓRIO terminar com reticências ("..."). Ela deve ser SINTATICAMENTE INCOMPLETA — uma oração aberta cujo complemento natural é exatamente a frase inicial. O ouvinte não percebe a quebra porque o cérebro une fim e início como uma única frase contínua.
 

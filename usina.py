@@ -279,12 +279,12 @@ for video in grade_para_processar:
     
     REGRAS DE RETENÇÃO E COPYWRITING (MUITO IMPORTANTE):
     1. FÓRMULA DO TÍTULO: Siga EXATAMENTE a instrução de formato abaixo. Para Nossa Senhora: OBRIGATÓRIO começar com 'Nossa Senhora' ou 'Aparecida'. Para Jesus: começar com a dor do fiel. É ESTRITAMENTE PROIBIDO começar com a palavra "Oração".
-    2. FÓRMULA DA THUMB: Máximo de 4 palavras. DEVE ser um gatilho de urgência conectado ao tema (Ex: "MILAGRE URGENTE HOJE", "SALVE SUA FAMÍLIA", "FIM DA ANSIEDADE").
+    2. FÓRMULA DA THUMB (MODELO CAMPEÃO — dados reais de CTR): 2 ou 3 palavras = RESULTADO CONCRETO + palavra de urgência no final (HOJE / AGORA). Ex: "MILAGRE HOJE", "PORTAS ABERTAS AGORA", "CURA HOJE", "FAMÍLIA RESTAURADA HOJE". PROIBIDO usar só palavras de calma/abstratas sem resultado (ex.: "PAZ PROFUNDA", "NOITE SERENA", "DESCANSO") — no teste real, "MIRACLE TODAY" teve 4,7% de CTR e "DEEP PEACE TONIGHT" 1,6%.
     3. REGRA DOS 15 SEGUNDOS (HOOK 3A): O início do roteiro DEVE ter 3 blocos rápidos:
        - Atenção (0-5s): Uma AFIRMAÇÃO EMPÁTICA sobre a dor do fiel. (PROIBIDO usar perguntas diretas).
        - Ambientação Sensorial (5-10s): Conecte a dor com o cenário de {periodo_dia}.
        - Autoridade/Agenda (10-15s): Diga que {persona_prompt} tem uma palavra de libertação e peça para ficar até o final.
-    4. CTA IMEDIATO: Peça naturalmente no início: "Se você crê, digite 'Amém, eu recebo' nos comentários agora mesmo".
+    4. CTA IMEDIATO: Peça naturalmente no início: "Se você crê, digite 'Amém, eu recebo' nos comentários agora mesmo". No ENCERRAMENTO, peça também com naturalidade que o fiel ENVIE esta oração para alguém que está precisando (ex.: "Se você lembrou de alguém enquanto rezava, envie esta oração para essa pessoa agora."). Compartilhar é o pedido principal do final.
     5. RESET DE ATENÇÃO (MEIO DO VÍDEO): Exatamente na metade do roteiro, insira uma frase falada para reconectar o espectador.
     6. GANCHOS INVISÍVEIS DE RETENÇÃO: A cada 300 a 400 palavras, incorpore organicamente — sem que o fiel perceba a técnica — um dos seguintes recursos: (a) ANTECIPAÇÃO: anuncie que algo importante será revelado logo adiante, sem revelar ainda; (b) REVELAÇÃO PARCIAL: entregue uma parte da resposta espiritual e sinalize que há mais; (c) VALIDAÇÃO EMOCIONAL: nomeie exatamente o que o fiel está sentindo naquele momento, criando reconhecimento profundo; (d) VIRADA DE BLOCO: faça uma transição inesperada de tom — de súplica para gratidão, de dor para esperança — que renove a atenção. Os ganchos devem ser invisíveis: o fiel não percebe a técnica, apenas sente que não consegue parar de ouvir. Nunca quebre o clima devocional.
 
