@@ -115,7 +115,7 @@ if texto_fixo:
                     comentarios = youtube.commentThreads().list(part='snippet', videoId=v_id, maxResults=100).execute()
                     if not any(t['snippet']['topLevelComment']['snippet'].get('authorChannelId', {}).get('value') == MEU_CANAL_ID for t in comentarios.get('items', [])):
                         if "#shorts" in v_titulo.lower():
-                            comentario_final = f"{texto_fixo}\n\n🙏 Que esta oração rápida abençoe seu dia! Convidamos você a visitar nosso canal para fazer as orações completas.\n\nNossas Playlists:\n🌅 Orações da Manhã: https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx\n🌌 Orações para Dormir: https://www.youtube.com/playlist?list=PLELsEoZ8x93SAjUNUtpBV08zQn4xExhD9"
+                            comentario_final = f"{texto_fixo}\n\n🙏 Que esta oração rápida abençoe seu dia! Convidamos você a visitar nosso canal para fazer as orações completas. Procure as playlists Orações da Manhã e Orações para Dormir na página do canal."
                         else:
                             link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93TNhv-zv2LQq3ghOl42D3Ln"
                             if "manhã" in v_titulo.lower(): link_playlist = "https://www.youtube.com/playlist?list=PLELsEoZ8x93SsNmSh6Wgbjn4daTH6SXjx"
