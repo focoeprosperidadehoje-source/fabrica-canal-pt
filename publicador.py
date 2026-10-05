@@ -231,6 +231,31 @@ def _janela_06h(linha, index):
         print(f"   ⚠️ Data inválida na linha {index}: {e}")
         return False
 
+def _recuperavel(linha):
+    """Dia de NOVENA das 06:00 que expirou por falha (ex.: 01-05/10/2026) é publicado na hora, em ordem, até 4 dias depois."""
+    try:
+        if str(linha.get('Horario', '')).strip() != '06:00' or not str(linha.get('Tema', '')).startswith('NOVENA|'):
+            return False
+        d = datetime.datetime.strptime(str(linha.get('Data', '')).strip(), "%Y-%m-%d").date()
+        hoje = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).date()
+        return 0 <= (hoje - d).days <= 4
+    except Exception:
+        return False
+
+def _expirou_18h(linha, index):
+    """18:00 com mais de 6h de atraso não é publicado (evita enxurrada de vídeos velhos depois de uma falha)."""
+    try:
+        tz = pytz.timezone('America/Sao_Paulo')
+        alvo = tz.localize(datetime.datetime.strptime(f"{str(linha.get('Data', '')).strip()} 18:00", "%Y-%m-%d %H:%M"))
+        if datetime.datetime.now(tz) - alvo > datetime.timedelta(hours=6):
+            print(f"   ⏭️ Linha {index} (18:00 de {linha.get('Data')}) atrasada — marcando 'Expirado'.")
+            try: aba_principal.update_cell(index, col_status, 'Expirado')
+            except Exception as e: print(f"   ⚠️ Falha ao marcar expirado: {e}")
+            return True
+    except Exception as e:
+        print(f"   ⚠️ Data inválida na linha {index}: {e}")
+    return False
+
 def _playlist_novena(nome):
     """Busca a playlist da novena pelo título exato; cria (pública) se não existir."""
     nome = nome.strip()[:150]
@@ -264,8 +289,14 @@ def _capitulos_novena(roteiro, duracao):
     return "\n\n⏱️ Capítulos da Novena:\n" + "\n".join(linhas)
 
 for index, linha in enumerate(dados, start=2):
-    if str(linha.get('Status', '')).strip() == 'Pronto p/ Áudio' and str(linha.get('Idioma', '')).strip().upper() == 'PT' and str(linha.get('Horario', '')).strip() == HORARIO_ALVO:
-        if HORARIO_ALVO == "06:00" and not _janela_06h(linha, index):
+    _st = str(linha.get('Status', '')).strip()
+    _recup = _st == 'Expirado' and _recuperavel(linha)
+    if (_st == 'Pronto p/ Áudio' or _recup) and str(linha.get('Idioma', '')).strip().upper() == 'PT' and str(linha.get('Horario', '')).strip() == HORARIO_ALVO:
+        if _recup:
+            print(f"   ♻️ Linha {index}: recuperando dia da novena perdido ({linha.get('Data')}) — publica agora.")
+        elif HORARIO_ALVO == "06:00" and not _janela_06h(linha, index):
+            continue
+        elif HORARIO_ALVO == "18:00" and _expirou_18h(linha, index):
             continue
         data_str, horario_str, titulo, descricao_ia, tags_str, persona, roteiro = str(linha.get('Data', '')), str(linha.get('Horario', '')), str(linha.get('Titulo', '')), str(linha.get('Descricao', '')), str(linha.get('Tags', '')), str(linha.get('Personagem', '')).upper(), str(linha.get('Roteiro', ''))
         texto_thumb = str(linha.get('Texto_Thumb', linha.get('Texto Thumb', ''))).strip() or " ".join(titulo.split()[:3])
@@ -295,13 +326,20 @@ for index, linha in enumerate(dados, start=2):
         
         arquivos_thumb = listar_arquivos(id_pasta_thumb, ('.jpg', '.jpeg', '.png'))
         if persona == 'MARIA':
+            _todas_thumbs = arquivos_thumb
             if is_aparecida: arquivos_thumb = [f for f in arquivos_thumb if 'aparecida' in f['name'].lower()]
             else: arquivos_thumb = [f for f in arquivos_thumb if 'aparecida' not in f['name'].lower()]
-            
+            if not arquivos_thumb and is_aparecida:
+                # sem miniatura 'aparecida' na pasta: usa uma imagem da própria pasta da Aparecida
+                arquivos_thumb = arquivos_img
+            if not arquivos_thumb: arquivos_thumb = _todas_thumbs
+        if not arquivos_thumb: arquivos_thumb = arquivos_img
+        print(f"   🖼️ Base da miniatura: {len(arquivos_thumb)} opção(ões).")
         thumb_base_local = baixar_arquivo(random.choice(arquivos_thumb)['id'], f"{PASTA_TEMP}/thumb_base.jpg")
 
         id_pasta_musica = ID_PASTA_AVE_MARIA if "18:00" in horario_str else ID_PASTA_MUSICAS
         arquivos_musica = listar_arquivos(id_pasta_musica, ('.mp3', '.wav'))
+        if not arquivos_musica: arquivos_musica = listar_arquivos(ID_PASTA_MUSICAS, ('.mp3', '.wav'))
         musica_local = baixar_arquivo(random.choice(arquivos_musica)['id'], f"{PASTA_TEMP}/musica.mp3")
         
         arquivos_sfx = listar_arquivos(ID_PASTA_SFX, ('.mp3', '.wav'))
