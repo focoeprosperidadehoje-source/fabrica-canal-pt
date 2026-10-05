@@ -6,6 +6,9 @@ on:
   workflow_run:  # renderiza logo depois de cada execução da usina
     workflows: ["Usina Automática Diária"]
     types: [completed]
+  push:
+    branches: [main]
+    paths: [publicador.py]
   workflow_dispatch: 
 
 jobs:

@@ -1,3 +1,11 @@
+# >>> DIAGNOSTICO: erro vira anotacao publica no GitHub Actions
+import sys as _sys, traceback as _tb
+def _gh_hook(t, v, tb):
+    _txt = ''.join(_tb.format_exception(t, v, tb))
+    print(_txt, flush=True)
+    print('::error title=publicador_PT::' + _txt[-3000:].replace('%','%25').replace('\r','').replace('\n','%0A'), flush=True)
+_sys.excepthook = _gh_hook
+# <<< DIAGNOSTICO
 import os, random, re, datetime, time, subprocess, pytz, json, gspread
 from google.oauth2.service_account import Credentials
 from google.oauth2.credentials import Credentials as YTCredentials
