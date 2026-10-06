@@ -1,7 +1,8 @@
-import os, json, time, datetime, gspread
+import os, json, sys, time, datetime, gspread
 from google.oauth2.service_account import Credentials
 from google.oauth2.credentials import Credentials as YTCredentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.genai import Client
 
@@ -11,7 +12,7 @@ CHAVE_API_GEMINI = os.environ.get("GEMINI_API_KEY", "")
 CHAVE_API_GEMINI_2 = os.environ.get("GEMINI_API_KEY_2", "")
 CHAVES_GEMINI = [k for k in [CHAVE_API_GEMINI, CHAVE_API_GEMINI_2] if k]
 
-MAX_RESPOSTAS = 30  # cap de segurança: 30 × 4 execuções × 4 canais = 480 chamadas Gemini/dia
+MAX_RESPOSTAS = 10  # 10 × 50 unid/reply × 4 runs/dia = 2.000 unid/dia (antes: 30 → 6.000/dia)
 
 creds_sheets = Credentials.from_service_account_info(json.loads(GOOGLE_JSON), scopes=['https://www.googleapis.com/auth/spreadsheets'])
 gc = gspread.authorize(creds_sheets)
@@ -35,23 +36,29 @@ def _gerar_comunidade(prompt):
     raise RuntimeError("Todas as chaves Gemini falharam.")
 
 def obter_modelo_lite():
-    # gemini-2.5-flash-lite: free tier, 15 RPM, ~1000 RPD por projeto
+    # gemini-flash-lite-latest: alias auto-atualizado — sempre o lite mais recente
     try:
         modelos = gemini_client.models.list()
         nomes = [m.name for m in modelos if 'generateContent' in m.supported_generation_methods]
-        for preferido in ['gemini-2.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']:
-            if any(preferido in n for n in nomes):
+        for preferido in ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite']:
+            if preferido.endswith('-latest') or any(preferido in n for n in nomes):
                 return preferido
-        return 'gemini-2.5-flash-lite'
+        return 'gemini-flash-lite-latest'
     except:
-        return 'gemini-2.5-flash-lite'
+        return 'gemini-flash-lite-latest'
 
 modelo_comunidade = obter_modelo_lite()
 print(f"🤖 Modelo de IA selecionado para a Comunidade: {modelo_comunidade}")
 
-canal_response = youtube.channels().list(part='id,contentDetails', mine=True).execute()
-MEU_CANAL_ID = canal_response['items'][0]['id']
-UPLOADS_PLAYLIST_ID = canal_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+try:
+    canal_response = youtube.channels().list(part='id,contentDetails', mine=True).execute()
+    MEU_CANAL_ID = canal_response['items'][0]['id']
+    UPLOADS_PLAYLIST_ID = canal_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+except HttpError as e:
+    if "quotaExceeded" in str(e) or "quota" in str(e).lower():
+        print("⚠️ Cota YouTube esgotada. Encerrando sem erro — próxima execução retomará automaticamente.")
+        sys.exit(0)
+    raise
 
 LINK_LIVE = f"https://www.youtube.com/channel/{MEU_CANAL_ID}/live"
 
